@@ -12,7 +12,7 @@
 		{
 		    "category": "Riscduino",
 		    "name": "Riscduino Boards",
-		    "version": "1.0.2",
+		    "version": "0.0.1",
 		    "url": "https://github.com/dineshannayya/riscduino_board/blob/main/custom_board/riscduino-0.0.1-979a54b9.tar.bz2",
 		    "checksum": "SHA-256:ba9f0ac1903fe34f710f6daffc7460d4cfe682a9afaf7c371ea2b50b8d8dbac7",
 		    "archiveFileName": "riscduino-0.0.1-979a54b9.tar.bz2",
