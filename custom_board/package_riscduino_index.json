@@ -13,10 +13,10 @@
 		    "category": "Riscduino",
 		    "name": "Riscduino Boards",
 		    "version": "0.0.1",
-		    "url": "https://github.com/dineshannayya/riscduino_board/blob/main/custom_board/riscduino-0.0.1-979a54b9.tar.bz2",
-		    "checksum": "SHA-256:ba9f0ac1903fe34f710f6daffc7460d4cfe682a9afaf7c371ea2b50b8d8dbac7",
+		    "url": "https://github.com/dineshannayya/riscduino_board/blob/main/custom_board/riscduino-0.0.1.tar.gz",
+		    "checksum": "-256:743c2a4a868b6b3f5f2a9b75f4ebac39a217f96df7b6baf8703a7b207bb2ac4d",
 		    "archiveFileName": "riscduino-0.0.1-979a54b9.tar.bz2",
-		    "size": "87293",
+		    "size": "3817384",
 		    "architecture": "riscv",
 		    "boards": [
 			{"name": "Riscduino Score"}
