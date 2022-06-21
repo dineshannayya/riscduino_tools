@@ -1,0 +1,97 @@
+{
+    "packages": [
+	{
+	    "name": "riscduino",
+	    "maintainer": "Dinesh Annayya",
+	    "websiteURL": "https://github.com/dineshannayya/riscduino",
+	    "email": "", 
+	    "help": {
+		"online": "https://github.com/dineshannayya/riscduino"
+	    },
+	    "platforms": [
+		{
+		    "category": "Riscduino",
+		    "name": "Riscduino Boards",
+		    "version": "1.0.2",
+		    "url": "https://github.com/dineshannayya/riscduino_board/blob/main/custom_board/riscduino-0.0.1-979a54b9.tar.bz2",
+		    "checksum": "SHA-256:ba9f0ac1903fe34f710f6daffc7460d4cfe682a9afaf7c371ea2b50b8d8dbac7",
+		    "archiveFileName": "riscduino-0.0.1-979a54b9.tar.bz2",
+		    "size": "87293",
+		    "architecture": "riscv",
+		    "boards": [
+			{"name": "Riscduino Score"}
+		    ], 
+		    "toolsDependencies": [
+			{
+			    "packager": "riscduino",
+			    "version": "3f7b3696217548bc31aeccf9a0c89bdfa4e16a8f",
+			    "name": "riscv32-unknown-elf-gcc"
+			},
+			{
+			    "packager": "riscduino",
+			    "version": "9bab0782d313679bb0bfb634e6e87c757b8d5503",
+			    "name": "openocd"
+			}
+		    ]
+		}
+	    ],
+	    "tools": [
+		{
+		    "version": "3f7b3696217548bc31aeccf9a0c89bdfa4e16a8f",
+		    "name": "riscv32-unknown-elf-gcc",
+		    "systems": [
+			{
+			    "url": "https://github.com/dineshannayya/riscduino_board/blob/main/custom_board/riscv32-unknown-elf-gcc-3f7b3696-x86_64-pc-linux-gnu.tar.bz2",
+			    "checksum": "SHA-256:976e3b17b388d7ada2b6dbb9ca07719c0a188e25a48f0176560961fe287265bc",
+			    "host": "x86_64-pc-linux-gnu",
+			    "archiveFileName": "riscv32-unknown-elf-gcc-3f7b3696-x86_64-pc-linux-gnu.tar.bz2",
+			    "size": "56081029"
+			},
+			{
+			    "url": "https://github.com/dineshannayya/riscduino_board/blob/main/custom_board/riscv32-unknown-elf-gcc-3f7b3696-i686-pc-linux-gnu.tar.bz2",
+			    "checksum": "SHA-256:3f90f3ba4155bafa2ccb1972f0d6f744b6c01c35818621b72feaf5d30938a6b6",
+			    "host": "i686-pc-linux-gnu",
+			    "archiveFileName": "riscv32-unknown-elf-gcc-3f7b3696-i686-pc-linux-gnu.tar.bz2",
+			    "size": "55511314"
+			},
+			{
+			    "url": "https://github.com/dineshannayya/riscduino_board/blob/main/custom_board/riscv32-unknown-elf-gcc-3f7b3696-x86_64-apple-darwin.tar.bz2",
+			    "checksum": "SHA-256:fb83e4cc78b3a36b0fbde6b964841b6d18ad16090f6cc1c4be46a165963500d6",
+			    "host": "x86_64-apple-darwin",
+			    "archiveFileName": "riscv32-unknown-elf-gcc-3f7b3696-x86_64-apple-darwin.tar.bz2",
+			    "size": "54972938"
+			}
+		    ]
+		},
+		{
+		    "version": "9bab0782d313679bb0bfb634e6e87c757b8d5503",
+		    "name": "openocd",
+		    "systems": [
+			{
+			    "url": "https://github.com/dineshannayya/riscduino_board/blob/main/custom_board/openocd-9bab0782-x86_64-pc-linux-gnu.tar.bz2",
+			    "checksum": "SHA-256:835c9a11b5118d73944211fd1a9182375b8ec80aa5068b8c3a2895d1a84964d5",
+			    "host": "x86_64-pc-linux-gnu",
+			    "archiveFileName": "openocd-9bab0782-x86_64-pc-linux-gnu.tar.bz2",
+			    "size": "1280792"
+			},
+			{
+			    "url": "https://github.com/dineshannayya/riscduino_board/blob/main/custom_board/openocd-9bab0782-i686-pc-linux-gnu.tar.bz2",
+			    "checksum": "SHA-256:003e23ecd8988a236672f4f30c11f1795b41a75920759d333ef9585e072884e3",
+			    "host": "i686-pc-linux-gnu",
+			    "archiveFileName": "openocd-9bab0782-i686-pc-linux-gnu.tar.bz2",
+			    "size": "1255956"
+			},
+			{
+			    "url": "https://github.com/dineshannayya/riscduino_board/blob/main/custom_board/openocd-9bab0782-x86_64-apple-darwin.tar.bz2",
+			    "checksum": "SHA-256:145e891a2324a025d3ac20f8e33cde69eddb5fa49ec1e9b8143db807c8ae6214",
+			    "host": "x86_64-apple-darwin",
+			    "archiveFileName": "openocd-9bab0782-x86_64-apple-darwin.tar.bz2",
+			    "size": "1228980"
+			}
+		    ]
+		}
+	    ]
+	}
+    ]
+}
+
