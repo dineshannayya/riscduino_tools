@@ -21,14 +21,11 @@ riscduino_score_devkit.menu.clksrc.hfxtal.build.f_cpu=16000000L
 riscduino_score_devkit.menu.clksrc.pll.build.f_cpu=256000000L
 riscduino_score_devkit.menu.clksrc.hfrosc.build.f_cpu=320000000L
 
-
-riscduino_score_devkit.build.mcu=rv32imac
-
 #"The 'core' file directory for this board, in ./cores
-riscduino_score_devkit.build.core=riscduino
+riscduino_score_devkit.build.core=arduino
 # This sets a define for use in the compiled code.
-riscduino_score_devkit.build.board=RISCDUINO_SCORE_DEVKIT
-riscduino_score_devkit.build.boardenv=riscduino_score
+riscduino_score_devkit.build.board=FREEDOM_E300_ARTY_DEVKIT
+riscduino_score_devkit.build.boardenv=freedom-e300-arty
 riscduino_score_devkit.build.sdata.size=4096
 #This selects the tool from "programmers.txt"
 riscduino_score_devkit.program.tool=openocd
@@ -37,4 +34,5 @@ riscduino_score_devkit.upload.tool=openocd
 riscduino_score_devkit.upload.maximum_size=8388608
 riscduino_score_devkit.build.ldscript={compiler.sdk.path}/env/riscduino_score/link.lds
 riscduino_score_devkit.build.openocdcfg=riscduino_score-devkit.cfg
+
 

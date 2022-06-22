@@ -14,7 +14,7 @@ compiler.elf2hex.cmd=riscv32-unknown-elf-objcopy
 compiler.size.cmd=riscv32-unknown-elf-size
 
 
-compiler.sdk.path=
+compiler.sdk.path={runtime.platform.path}/sdk/bsp
 compiler.preproc.flags=-I{build.system.path}/include -I{compiler.sdk.path}/include -I{compiler.sdk.path}/env -I{compiler.sdk.path}/drivers -I{compiler.sdk.path}/env/{build.boardenv}
 
 compiler.c.flags=-c -O2 -march={build.mcu} -fpeel-loops -ffreestanding -ffunction-sections -fdata-sections -Wall {compiler.preproc.flags} -include sys/cdefs.h -g
@@ -83,7 +83,7 @@ tools.openocd.path={runtime.tools.openocd.path}/bin/
 tools.openocd.cmd=openocd
 tools.openocd.program.params.verbose=-v
 tools.openocd.program.params.quiet=-q
-tools.openocd.program.config=
+tools.openocd.program.config={runtime.platform.path}/sdk/bsp/env/{build.boardenv}/openocd.cfg
 tools.openocd.program.pattern="{path}{cmd}" -f {program.config} -c "flash protect 0 64 last off; program {build.path}/{build.project_name}.elf verify; resume 0x20400000; exit"
 
 
@@ -91,5 +91,5 @@ tools.manual_openocd.path=
 tools.manual_openocd.cmd=openocd
 tools.manual_openocd.program.params.verbose=-v
 tools.manual_openocd.program.params.quiet=-q
-tools.manual_openocd.program.config=
+tools.manual_openocd.program.config={runtime.platform.path}/sdk/bsp/env/{build.boardenv}/openocd.cfg
 tools.manual_openocd.program.pattern="{path}{cmd}" -f {program.config} -c "flash protect 0 64 last off; program {build.path}/{build.project_name}.elf verify; resume 0x20400000; exit"
