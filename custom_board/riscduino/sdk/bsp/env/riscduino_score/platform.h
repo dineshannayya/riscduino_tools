@@ -1,7 +1,7 @@
 // See LICENSE for license details.
 
-#ifndef _SIFIVE_PLATFORM_H
-#define _SIFIVE_PLATFORM_H
+#ifndef _RISCDUINO_PLATFORM_H
+#define _RISCDUINO_PLATFORM_H
 
 // Some things missing from the official encoding.h
 #define MCAUSE_INT         0x80000000
@@ -117,9 +117,9 @@
 #define PLIC_NUM_PRIORITIES 7
 
 #define HAS_BOARD_BUTTONS
-#include "hifive1.h"
+#include "riscduino.h"
 
 unsigned long get_timer_freq(void);
 uint64_t get_timer_value(void);
 
-#endif /* _SIFIVE_PLATFORM_H */
+#endif /* _RISCDUINO_PLATFORM_H */
