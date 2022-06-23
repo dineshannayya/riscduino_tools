@@ -51,7 +51,7 @@ SECTIONS {
   } >ROM
 
   .text  : {
-    *crt.o(.text .text.*)
+    *start.S.o(.text .text.*)
     *(.text .text.*)
     *(sc_test_section)
     . = ALIGN(CL_SIZE);
