@@ -1,160 +1,97 @@
-//////////////////////////////////////////////////////////////////////////////
-// SPDX-FileCopyrightText: 2021, Dinesh Annayya                           ////
-//                                                                        ////
-// Licensed under the Apache License, Version 2.0 (the "License");        ////
-// you may not use this file except in compliance with the License.       ////
-// You may obtain a copy of the License at                                ////
-//                                                                        ////
-//      http://www.apache.org/licenses/LICENSE-2.0                        ////
-//                                                                        ////
-// Unless required by applicable law or agreed to in writing, software    ////
-// distributed under the License is distributed on an "AS IS" BASIS,      ////
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.///
-// See the License for the specific language governing permissions and    ////
-// limitations under the License.                                         ////
-// SPDX-License-Identifier: Apache-2.0                                    ////
-// SPDX-FileContributor: Dinesh Annayya <dinesha@opencores.org>           ////
-//////////////////////////////////////////////////////////////////////////////
+// See LICENSE for license details
 
-#include "riscv_csr_encoding.h"
-#include "sc_test.h"
+#ifndef ENTRY_S
+#define ENTRY_S
 
-# define LREG lw
-# define SREG sw
-# define REGBYTES 4
+#include "encoding.h"
+#include "riscduino/bits.h"
 
-    .globl _start
-    .globl main
-    .globl trap_entry
-    .globl handle_trap
-    .globl sc_exit
-    .weak trap_entry, handle_trap
-
-    .text
-    .org (64*3)
-    .balign 64
-machine_trap_entry:
-    j trap_entry
-
-    .balign 64
-
-_start:
-#ifndef __RVE_EXT
-    zero_int_regs 1, 31
-#else
-    zero_int_regs 1, 15
-#endif
-    # Global pointer init
-    .option push
-    .option norelax
-    la    gp, __global_pointer$
-    .option pop
-    # clear bss
-    la      a1, __BSS_START__
-    la      a2, __BSS_END__
-    j       4f
-3:  sw      zero, 0(a1)
-    add     a1, a1, 4
-4:  bne     a1, a2, 3b
-    la      sp, __C_STACK_TOP__
-
-    // Timer init
-    li      t0, mtime_ctrl
-    li      t1, (1 << YCR_MTIME_CTRL_EN)   // enable, use internal clock
-    sw      t1, (t0)
-    li      t0, mtime_div
-    li      t1, (100-1)                     // divide by 100
-    sw      t1, (t0)
-    li      t0, mtimecmp
-    li      t1, -1
-    sw      t1, (t0)                        // max value for mtimecmp
-    sw      t1, 4(t0)
-
-    li      a0, 0
-    li      a1, 0
-    jal     main
-    j       sc_exit
-
+  .section      .text.entry	
+  .align 2
+  .global trap_entry
 trap_entry:
-    addi sp, sp, -272
+  addi sp, sp, -32*REGBYTES
 
-    SREG x1, 1*REGBYTES(sp)
-    SREG x2, 2*REGBYTES(sp)
-    SREG x3, 3*REGBYTES(sp)
-    SREG x4, 4*REGBYTES(sp)
-    SREG x5, 5*REGBYTES(sp)
-    SREG x6, 6*REGBYTES(sp)
-    SREG x7, 7*REGBYTES(sp)
-    SREG x8, 8*REGBYTES(sp)
-    SREG x9, 9*REGBYTES(sp)
-    SREG x10, 10*REGBYTES(sp)
-    SREG x11, 11*REGBYTES(sp)
-    SREG x12, 12*REGBYTES(sp)
-    SREG x13, 13*REGBYTES(sp)
-    SREG x14, 14*REGBYTES(sp)
-    SREG x15, 15*REGBYTES(sp)
-#ifndef __RVE_EXT
-    SREG x16, 16*REGBYTES(sp)
-    SREG x17, 17*REGBYTES(sp)
-    SREG x18, 18*REGBYTES(sp)
-    SREG x19, 19*REGBYTES(sp)
-    SREG x20, 20*REGBYTES(sp)
-    SREG x21, 21*REGBYTES(sp)
-    SREG x22, 22*REGBYTES(sp)
-    SREG x23, 23*REGBYTES(sp)
-    SREG x24, 24*REGBYTES(sp)
-    SREG x25, 25*REGBYTES(sp)
-    SREG x26, 26*REGBYTES(sp)
-    SREG x27, 27*REGBYTES(sp)
-    SREG x28, 28*REGBYTES(sp)
-    SREG x29, 29*REGBYTES(sp)
-    SREG x30, 30*REGBYTES(sp)
-    SREG x31, 31*REGBYTES(sp)
-#endif // __RVE_EXT
+  STORE x1, 1*REGBYTES(sp)
+  STORE x2, 2*REGBYTES(sp)
+  STORE x3, 3*REGBYTES(sp)
+  STORE x4, 4*REGBYTES(sp)
+  STORE x5, 5*REGBYTES(sp)
+  STORE x6, 6*REGBYTES(sp)
+  STORE x7, 7*REGBYTES(sp)
+  STORE x8, 8*REGBYTES(sp)
+  STORE x9, 9*REGBYTES(sp)
+  STORE x10, 10*REGBYTES(sp)
+  STORE x11, 11*REGBYTES(sp)
+  STORE x12, 12*REGBYTES(sp)
+  STORE x13, 13*REGBYTES(sp)
+  STORE x14, 14*REGBYTES(sp)
+  STORE x15, 15*REGBYTES(sp)
+  STORE x16, 16*REGBYTES(sp)
+  STORE x17, 17*REGBYTES(sp)
+  STORE x18, 18*REGBYTES(sp)
+  STORE x19, 19*REGBYTES(sp)
+  STORE x20, 20*REGBYTES(sp)
+  STORE x21, 21*REGBYTES(sp)
+  STORE x22, 22*REGBYTES(sp)
+  STORE x23, 23*REGBYTES(sp)
+  STORE x24, 24*REGBYTES(sp)
+  STORE x25, 25*REGBYTES(sp)
+  STORE x26, 26*REGBYTES(sp)
+  STORE x27, 27*REGBYTES(sp)
+  STORE x28, 28*REGBYTES(sp)
+  STORE x29, 29*REGBYTES(sp)
+  STORE x30, 30*REGBYTES(sp)
+  STORE x31, 31*REGBYTES(sp)
 
-    csrr a0, mcause
-    csrr a1, mepc
-    mv a2, sp
-    jal handle_trap
+  csrr a0, mcause
+  csrr a1, mepc
+  mv a2, sp
+  call handle_trap
+  csrw mepc, a0
 
-    LREG x1, 1*REGBYTES(sp)
-    LREG x2, 2*REGBYTES(sp)
-    LREG x3, 3*REGBYTES(sp)
-    LREG x4, 4*REGBYTES(sp)
-    LREG x5, 5*REGBYTES(sp)
-    LREG x6, 6*REGBYTES(sp)
-    LREG x7, 7*REGBYTES(sp)
-    LREG x8, 8*REGBYTES(sp)
-    LREG x9, 9*REGBYTES(sp)
-    LREG x10, 10*REGBYTES(sp)
-    LREG x11, 11*REGBYTES(sp)
-    LREG x12, 12*REGBYTES(sp)
-    LREG x13, 13*REGBYTES(sp)
-    LREG x14, 14*REGBYTES(sp)
-    LREG x15, 15*REGBYTES(sp)
-#ifndef __RVE_EXT
-    LREG x16, 16*REGBYTES(sp)
-    LREG x17, 17*REGBYTES(sp)
-    LREG x18, 18*REGBYTES(sp)
-    LREG x19, 19*REGBYTES(sp)
-    LREG x20, 20*REGBYTES(sp)
-    LREG x21, 21*REGBYTES(sp)
-    LREG x22, 22*REGBYTES(sp)
-    LREG x23, 23*REGBYTES(sp)
-    LREG x24, 24*REGBYTES(sp)
-    LREG x25, 25*REGBYTES(sp)
-    LREG x26, 26*REGBYTES(sp)
-    LREG x27, 27*REGBYTES(sp)
-    LREG x28, 28*REGBYTES(sp)
-    LREG x29, 29*REGBYTES(sp)
-    LREG x30, 30*REGBYTES(sp)
-    LREG x31, 31*REGBYTES(sp)
-#endif // __RVE_EXT
+  # Remain in M-mode after mret
+  li t0, MSTATUS_MPP
+  csrs mstatus, t0
 
-    addi sp, sp, 272
-    mret
+  LOAD x1, 1*REGBYTES(sp)
+  LOAD x2, 2*REGBYTES(sp)
+  LOAD x3, 3*REGBYTES(sp)
+  LOAD x4, 4*REGBYTES(sp)
+  LOAD x5, 5*REGBYTES(sp)
+  LOAD x6, 6*REGBYTES(sp)
+  LOAD x7, 7*REGBYTES(sp)
+  LOAD x8, 8*REGBYTES(sp)
+  LOAD x9, 9*REGBYTES(sp)
+  LOAD x10, 10*REGBYTES(sp)
+  LOAD x11, 11*REGBYTES(sp)
+  LOAD x12, 12*REGBYTES(sp)
+  LOAD x13, 13*REGBYTES(sp)
+  LOAD x14, 14*REGBYTES(sp)
+  LOAD x15, 15*REGBYTES(sp)
+  LOAD x16, 16*REGBYTES(sp)
+  LOAD x17, 17*REGBYTES(sp)
+  LOAD x18, 18*REGBYTES(sp)
+  LOAD x19, 19*REGBYTES(sp)
+  LOAD x20, 20*REGBYTES(sp)
+  LOAD x21, 21*REGBYTES(sp)
+  LOAD x22, 22*REGBYTES(sp)
+  LOAD x23, 23*REGBYTES(sp)
+  LOAD x24, 24*REGBYTES(sp)
+  LOAD x25, 25*REGBYTES(sp)
+  LOAD x26, 26*REGBYTES(sp)
+  LOAD x27, 27*REGBYTES(sp)
+  LOAD x28, 28*REGBYTES(sp)
+  LOAD x29, 29*REGBYTES(sp)
+  LOAD x30, 30*REGBYTES(sp)
+  LOAD x31, 31*REGBYTES(sp)
 
+  addi sp, sp, 32*REGBYTES
+  mret
+
+.weak handle_trap
 handle_trap:
-    j SIM_EXIT
-
-// end of crt.S
+1:
+  j 1b
+	
+#endif
