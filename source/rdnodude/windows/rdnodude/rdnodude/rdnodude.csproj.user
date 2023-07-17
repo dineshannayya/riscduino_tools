@@ -2,4 +2,7 @@
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <StartArguments>COM9 9600 arduino_character_analysis.hex</StartArguments>
   </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <StartArguments>COM9 9600 arduino_character_analysis.hex</StartArguments>
+  </PropertyGroup>
 </Project>
