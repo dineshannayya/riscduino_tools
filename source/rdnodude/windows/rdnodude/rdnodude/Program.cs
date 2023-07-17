@@ -388,7 +388,7 @@ namespace rdnodude
                                     if (line[0] != '@' && line[0] != ' ' && nbytes >= 256)
                                     {
                                         total_bytes += nbytes;
-                                        Console.WriteLine("addr {0}: flash page write successful",addr);
+                                        Console.WriteLine("addr {0:x8}: flash page write successful",addr);
                                         if(nbytes > 256) {
                                             Console.WriteLine("ERROR: *** Data over 256 hit");
                                         } else {
@@ -495,7 +495,7 @@ namespace rdnodude
                                     if (line[0] != '@' && line[0] != ' ' && nbytes >= 256)
                                     {
                                         total_bytes += nbytes;
-                                        Console.WriteLine("addr {0}: flash page Read verify Completed", addr);
+                                        Console.WriteLine("addr {0:x8}: flash page Read verify Completed", addr);
                                         if (nbytes > 256)
                                         {
                                             Console.WriteLine("ERROR: *** Data over 256 hit");
@@ -557,8 +557,8 @@ namespace rdnodude
             // Create a new SerialPort object with default settings.
             _serialPort = new SerialPort(ComPort, iBaudRate);
             _serialPort.Open();
-            _serialPort.WriteTimeout = 500;
-            _serialPort.ReadTimeout = 500;
+            _serialPort.WriteTimeout = 300;
+            _serialPort.ReadTimeout = 300;
 
             _serialPort.DiscardInBuffer();
 

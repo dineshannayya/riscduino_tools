@@ -3,6 +3,6 @@
     <StartArguments>COM9 9600 arduino_character_analysis.hex</StartArguments>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <StartArguments>COM9 9600 arduino_character_analysis.hex</StartArguments>
+    <StartArguments>COM9 12500 arduino_character_analysis.hex</StartArguments>
   </PropertyGroup>
 </Project>
