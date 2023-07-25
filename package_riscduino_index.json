@@ -1,0 +1,86 @@
+{
+    "packages": [
+	{
+	    "name": "riscduino",
+	    "maintainer": "Dinesh Annayya",
+	    "websiteURL": "https://github.com/dineshannayya/riscduino",
+	    "email": "", 
+	    "help": {
+		"online": "https://github.com/dineshannayya/riscduino"
+	    },
+	    "platforms": [
+		{
+		    "category": "Riscduino",
+		    "name": "Riscduino Boards",
+		    "version": "1.0.4",
+		    "url": "https://github.com/dineshannayya/riscduino_tools/raw/main/riscduino-1.0.4.tar.gz",
+		    "checksum": "SHA-256:bfde9d608b58dc18305d585cd466b19f5d828d7425aff4063a38e5dee633f6c5",
+	        "archiveFileName": "riscduino-1.0.4.tar.gz",
+		    "size": "123021",
+		    "architecture": "riscv",
+		    "boards": [
+			{"name": "Riscduino Uno"}
+		    ], 
+		    "toolsDependencies": [
+			{
+			    "packager": "riscduino",
+			    "version": "1.0.1",
+			    "name": "riscv64-unknown-elf-gcc"
+			},
+			{
+			    "packager": "riscduino",
+			    "version": "1.0.2",
+			    "name": "rdnodude"
+			}
+		    ]
+		}
+	    ],
+	    "tools": [
+		{
+		    "version": "1.0.1",
+		    "name": "riscv64-unknown-elf-gcc",
+		    "systems": [
+			{
+			    "url": "https://github.com/dineshannayya/riscduino_tools/raw/main/riscv64-unknown-elf-toolchain-10.1.0-2020.06.24-x86_64-w64-mingw32.zip",
+			    "checksum": "SHA-256:524b272dbe5d1fbbdcd03facea4f954dbdd17affd426bedf2364a03499ad62fb",
+			    "host": "i686-mingw32",
+			    "archiveFileName": "riscv64-unknown-elf-toolchain-10.1.0-2020.06.24-x86_64-w64-mingw32.zip",
+			    "size": "86905749"
+			},
+			{
+			    "url": "https://github.com/dineshannayya/riscduino_tools/raw/main/riscv64-unknown-elf.gcc-8.2.0-i686-pc-linux-gnu.tar.gz",
+			    "checksum": "SHA-256:e20fd9ec3a06da6a5b7fbb80fa3425f52d1da7905e940a222226b5bb3bdd0280",
+			    "host": "x86_64-pc-linux-gnu",
+			    "archiveFileName": "riscv64-unknown-elf.gcc-8.2.0-i686-pc-linux-gnu.tar.gz",
+			    "size": "261926178"
+			}
+
+		    ]
+		},
+		{
+		    "version": "1.0.2",
+		    "name": "rdnodude",
+		    "systems": [
+			{
+			    "url": "https://github.com/dineshannayya/riscduino_tools/raw/main/rdnodude-0.0.2-2023.07.17-x86_64-w64-mingw32.zip",
+			    "checksum": "SHA-256:91d99eec3cb303de5334c4d80994340e3c973380d0c8610b22b0309cc9708f22",
+			    "host": "i686-mingw32",
+			    "archiveFileName": "rdnodude-0.0.2-2023.07.17-x86_64-w64-mingw32.zip",
+			    "size": "4804"
+			},
+			{
+			    "url": "https://github.com/dineshannayya/riscduino_tools/raw/main/rdnodude-0.0.2-2023.07.18-x86_64-i686-pc-linux-gnu.tar.gz",
+			    "checksum": "SHA-256:f1c398a0e359c65389e5598fb17510ab3b5385a366c77c4084ab6d914e340c96",
+			    "host": "x86_64-pc-linux-gnu",
+			    "archiveFileName": "rdnodude-0.0.2-2023.07.18-x86_64-i686-pc-linux-gnu.tar.gz",
+			    "size": "4444"
+			}
+
+		    ]
+		}
+
+	    ]
+	}
+    ]
+}
+
