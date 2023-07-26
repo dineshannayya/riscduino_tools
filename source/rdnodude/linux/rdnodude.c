@@ -28,6 +28,9 @@
 ////  Revision :                                                                                 ////
 ////    0.1 - 17-July 2023, Dinesh A                                                             ////
 ////          Initial integration with firmware                                                  ////
+////    0.2 - 26 July 2023, Dinesh A                                                             ////
+////          As current Flash write phase is around 4 Minute, To reduce the time, we are        ////
+////          skipping write back response function and added just delay function                ////
 /////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #include <fcntl.h>
@@ -50,7 +53,7 @@ unsigned char buffer[256];
 unsigned char wr_resp[14] = {'c','m','d',' ','s','u','c','c','e','s','s','\n','>','>'};
 
 
-struct s_result uartm_wm_cmd    (int fd,unsigned int addr, unsigned int data);
+struct s_result uartm_wm_cmd    (int fd,unsigned int addr, unsigned int data,char bEnbRdCheck);
 void            user_reboot     ();
 int             open_serial_port(const char * device, uint32_t baud_rate);
 int             write_port      (int fd, uint8_t * buffer, size_t size);
@@ -62,14 +65,14 @@ void            flush_tx        (int fd);
 // Flush Serial Port Rx Buffer
 //------------------------------------------------
 void flush_rx(int fd) {
-   ioctl(fd, TCFLSH, 0); // flush receive
+   ioctl(fd, TCIFLUSH); // flush receive
 }
 
 //------------------------------------------------
 // Flush Serial Port Tx Buffer
 //------------------------------------------------
 void flush_tx(int fd) {
-   ioctl(fd, TCFLSH, 1); // flush transmit
+   ioctl(fd, TCOFLUSH); // flush transmit
 }
 
 
@@ -89,32 +92,21 @@ char * ByteArrayToString(uint8_t * buffer, int iSize) {
   Extract Specific Integer Valiue of SubString
 **********************************/
 
-struct  s_result  ExtractReadResponse(char *buffer,int iSize,int iPos) {
+struct  s_result  ExtractReadResponse(char *buffer,int iSize) {
      struct s_result result;
+     char substring[8];
      result.flag = 0;
 
-        char *InString = ByteArrayToString(buffer, iSize);
-
-        char *delim = " ";
-        unsigned count = 0;
-        /* First call to strtok should be done with string and delimiter as first and second parameter*/
-        char *token = strtok(InString,delim);
-        count++;
-        if(strcmp(token,"Response:")){
-             /* Consecutive calls to the strtok should be with first parameter as NULL and second parameter as delimiter
-              * * return value of the strtok will be the split string based on delimiter*/
-             while(token != NULL) {
-                     printf("Token no. %d : %s \n", count,token);
-                     token = strtok(NULL,delim);
-                     count++;
-                     if(count == iPos) {
-                      result.flag = 1;
-                      break;
-                     }
-             }
-            result.value = atoi(token);
+        //printf("Response Received: %s \n", buffer);
+        if(strncmp(buffer,"Response:",9) == 0) {
+            strncpy(substring,buffer+10,8);
+            sscanf(substring,"%x",&result.value);
+            //printf("Received Data: %08x\n",result.value);
+            result.flag = 1;
         } else {
-             printf("Invalid Response: %s Received", buffer);
+             printf("Invalid Response: %s Received\n", buffer);
+             exit(0);
+            
         }
         return result;
 }
@@ -127,8 +119,8 @@ struct  s_result  ExtractReadResponse(char *buffer,int iSize,int iPos) {
      struct s_result result;
      result.flag = 0;
 
-     int iSize = read_port(fd,buffer, 14);
-     result = ExtractReadResponse(buffer,iSize,2);
+     int iSize = read_port(fd,buffer, 19);
+     result = ExtractReadResponse(buffer,iSize);
 
      return result;
  }
@@ -151,7 +143,7 @@ struct  s_result  ExtractReadResponse(char *buffer,int iSize,int iPos) {
             {  // For invalid response retry for 3 times
                  flush_rx(fd);
                  sprintf(buffer,"rm %08x\n", addr);
-                //printf("%s",buffer);
+                 //printf("Sending: %s",buffer);
                  write_port(fd, buffer, 12);
                 result = uartm_read_response(fd, addr);
                 if(result.flag == 1) return result;
@@ -171,16 +163,14 @@ struct s_result uartm_write_response(int fd,unsigned int  addr, unsigned int  da
             result.flag = 0;
             int iChar;
 
-
             read_port(fd,buffer, 14);
-            for(int i =0; i < 14; i++) {
-               if(buffer[i] != wr_resp[i]) {
-                 printf("Invalid Response: Received");
+            if(strncmp(buffer,"cmd success",11) != 0) {
+                 printf("Invalid Response:%s Received\n",buffer);
                  result.flag = 0;
-               }
+            } else {
+                 //printf("Valid Response:%s Received\n",buffer);
+                result.flag = 1;
             }
-            result.flag = 1;
-
 
             return result;
         }
@@ -191,7 +181,7 @@ struct s_result uartm_write_response(int fd,unsigned int  addr, unsigned int  da
 //#  Return: Response Good  => '1' 
 //#  Return: Response Bad  => '0' 
 //####################################################
-        struct s_result uartm_wm_cmd(int fd,unsigned int addr, unsigned int data)
+        struct s_result uartm_wm_cmd(int fd,unsigned int addr, unsigned int data, char bEnbRdCheck)
         {
             int retry;
 
@@ -204,9 +194,17 @@ struct s_result uartm_write_response(int fd,unsigned int  addr, unsigned int  da
             {
                 flush_rx(fd);
                 sprintf(buffer,"wm %08x %08x\n", addr, data);
+                //printf("Sending Command: %s\n",buffer);
                 write_port(fd, buffer, 21);
-                result= uartm_write_response(fd,addr,data);
-                if (result.flag == 1) return result;
+                if(bEnbRdCheck) {
+                    result= uartm_write_response(fd,addr,data);
+                    if (result.flag == 1) return result;
+                } else {
+                   usleep(15000);
+                   flush_rx(fd);
+                   result.flag = 1;
+                   return result;
+                }
             }
             // After three retry exit
             close(fd);
@@ -219,10 +217,10 @@ struct s_result uartm_write_response(int fd,unsigned int  addr, unsigned int  da
 //#############################################
 void user_reboot(int fd) {
     printf("Reseting up User Risc Core\n");
-    uartm_wm_cmd(fd,0x30080000,0x80000000); // Set Bit[31] = 1 to indicate user flashing to caravel
-    uartm_wm_cmd(fd,0x30080000,0x80000001);
-    uartm_wm_cmd(fd,0x30080004,0x00001000);
-    uartm_wm_cmd(fd,0x30020004,0x0000001F);
+    uartm_wm_cmd(fd,0x30080000,0x80000000,1); // Set Bit[31] = 1 to indicate user flashing to caravel
+    uartm_wm_cmd(fd,0x30080000,0x80000001,1);
+    uartm_wm_cmd(fd,0x30080004,0x00001000,1);
+    uartm_wm_cmd(fd,0x30020004,0x0000001F,1);
 }
 
 
@@ -327,7 +325,7 @@ ssize_t read_port(int fd, uint8_t * buffer, size_t size)
     }
     if (r == 0)
     {
-       printf("Exiting Serial port Loop due to Time Out");
+       printf("Exiting Serial port Loop due to Time Out\n");
       // Timeout
       break;
     }
@@ -335,7 +333,314 @@ ssize_t read_port(int fd, uint8_t * buffer, size_t size)
   }
   return received;
 }
+
+//---------------------------------
+// Reading Flash Device ID(0x9F)
+//---------------------------------
+void user_flash_device_id(int fd)
+{
+    struct s_result result;
+    result.flag = 0;
+
+
+    //uartm_wm_cmd(0x30080000,0x00000000,1)
+    //uartm_wm_cmd(0x30080000,0x00000001,1)
+    //uartm_wm_cmd(0x30080004,0x00001000,1)
+    //uartm_wm_cmd(0x30020004,0x0000001F,1)
+    uartm_wm_cmd(fd,0x3000001c, 0x00000001,1);
+    uartm_wm_cmd(fd,0x30000020, 0x040c009f,1);
+    result = uartm_rm_cmd(fd,0x3000002c);
+    //printf("SPI Flash Device ID:0x%08x\n", result.value);
+    if (result.value != 0x001640ef)
+    {
+        printf("SPI Flash Device ID => 0x%08x [BAD]", result.value);
+        exit(0);
+    }
+    else
+    {
+        printf("SPI Flash Device ID => 0x%08x [GOOD]\n", result.value);
+        result.flag = 1;
+    }
+}
  
+//---------------------------------
+// Reading Riscduino Chip ID
+//---------------------------------
+void user_chip_id(int fd)
+{
+    struct s_result result;
+    result.flag = 0;
+
+    result = uartm_rm_cmd(fd,0x30020000);
+    if (result.value == 0x82682501)
+    {
+        printf("Riscduino Chip ID => 0x%08x [GOOD]\n", result.value);
+        result.flag = 1;
+    }
+    else
+    {
+        printf("Riscduino Chip ID => %d [BAD]\n", result.value);
+        exit(0);
+    }
+}
+
+//#############################################
+//#  Sector Erase Command            
+//#############################################
+void user_flash_chip_erase(int fd){
+     struct s_result result;
+     result.flag = 0;
+
+     printf("Flash Chip Erase: In Progress\n");
+     uartm_wm_cmd(fd,0x30080004,0x00001000,1);
+     uartm_wm_cmd(fd,0x3000001c,0x00000001,1);
+     uartm_wm_cmd(fd,0x30000020,0x00000006,1);
+     uartm_wm_cmd(fd,0x30000028,0x00000000,1);
+     uartm_wm_cmd(fd,0x3000001c,0x00000001,1);
+     uartm_wm_cmd(fd,0x30000020,0x002200d8,1);
+     uartm_wm_cmd(fd,0x30000024,0x00000000,1);
+     uartm_wm_cmd(fd,0x30000028,0x00000000,1);
+     uartm_wm_cmd(fd,0x3000001c,0x00000001,1);
+     uartm_wm_cmd(fd,0x30000020,0x040c0005,1);
+     result.value = 0xFF;
+     while (result.value != 0x00)
+     {
+         result = uartm_rm_cmd(fd,0x3000002c);
+     }
+     printf("Flash Chip Erasing: Done\n");
+}
+
+//###########################
+//### Write 4 Byte
+//###########################
+static void user_flash_write_cmd(int fd)
+{
+    uartm_wm_cmd(fd,0x30080004, 0x00001000,1);
+    uartm_wm_cmd(fd,0x3000001c, 0x00000001,1);
+}
+
+
+//-----------------------------------------
+// Extract Number of words per line
+//-----------------------------------------
+int num_word_per_line(char * Instring) {
+int i,count=1;
+int ignoreSpace = 0;
+
+for (i = 0; i < strlen(Instring)-2; i++)
+    {
+        if (Instring[i] == ' ' && (i != (strlen(Instring)-3)))
+        {
+            if (!ignoreSpace)
+            {       
+                count++;
+                ignoreSpace = 1;
+            }
+        }
+        else 
+        {
+            ignoreSpace = 0;
+        }
+    }
+    //if (!ignoreSpace)
+    //    count++;
+
+    return count;
+
+}
+
+//------------------------------------------------------------------------------
+//Flash Write Byte , addr : Address, exp_data: Expected Data, bcnt: valid byte cnt
+//------------------------------------------------------------------------------
+void user_flash_write_data(int fd,unsigned int addr, unsigned int data, unsigned int bcnt,char bEnbRdCheck) {
+    struct s_result result ;
+    result.flag = 0;
+
+    //Console.WriteLine("Flash Write Addr: {0:x8} Data:{1:x8}", addr, data);
+    uartm_wm_cmd(fd,0x30000020, 0x00000006,bEnbRdCheck);
+    uartm_wm_cmd(fd,0x30000028, 0x00000000,bEnbRdCheck);
+    //uartm_wm_cmd(fd,0x3000001c,0x00000001,bEnbRdCheck);
+    uartm_wm_cmd(fd,0x30000020, 0x00270002 | bcnt << 24,bEnbRdCheck);
+    uartm_wm_cmd(fd,0x30000024, addr,bEnbRdCheck);
+    uartm_wm_cmd(fd,0x30000028, data,bEnbRdCheck);
+    //uartm_wm_cmd(fd,0x3000001c,0x00000001,bEnbRdCheck);
+    uartm_wm_cmd(fd,0x30000020, 0x040c0005,bEnbRdCheck);
+
+    result.value = 0xFF;
+    while (result.value != 0x00)
+    {
+        result = uartm_rm_cmd(fd,0x3000002c);
+    }
+}
+
+
+
+//##############################
+//# Flash Write
+//##############################
+void user_flash_progam(int fd,const char *file_path) {
+   unsigned int addr,dataout,ncnt;
+   int nbytes, total_bytes;
+   char Instring[256];
+   char substring[8];
+   unsigned int tData;
+   nbytes = 0;
+   total_bytes = 0;
+   addr = 0;
+
+   printf("User Flash Write Phase Started\n");
+   user_flash_write_cmd(fd);
+        
+   FILE* f_open;
+   f_open = fopen(file_path, "r");
+
+    while (fgets(Instring,256, f_open)) {
+        nbytes = num_word_per_line(Instring);
+        //printf("Line:%d :%ld :word:%d : %s\n",nbytes,strlen(Instring), nbytes,Instring);
+        if(Instring[0] == '@') {
+            nbytes = 0; // Indicate this is address byte, not data byte
+            strncpy(substring,Instring+1,8);
+            sscanf(substring,"%x",&addr);
+            printf("setting address to 0x%08x\n",addr);
+        } else {
+            ncnt = 0;
+            for(int i =0; i < nbytes; i++) {
+               strncpy(substring,Instring+(i*3),2);
+               substring[2] =0x00;
+               //printf("SubString:%d:%d:%d: %s\n",nbytes,i,ncnt,substring);
+               sscanf(substring,"%x",&tData);
+               int tShift = (8 * i);
+               dataout |= tData << tShift; 
+               ncnt = ncnt + 1;
+               total_bytes ++;
+               if(ncnt == 4){
+                   printf("Writing Flash Address: 0x%08x Data: 0x%08x\n", addr, dataout);
+                   user_flash_write_data(fd,addr,dataout,4,1);
+                   addr = addr+4;
+                   ncnt = 0;
+                   dataout = 0x00;
+                }
+            }
+            if(ncnt > 0 && ncnt < 4) {   // if line has less than 4 bytes
+                 printf("Writing Flash Partial DW, Address: 0x%08x Data: %0x8x Cnt:%d", addr, dataout, ncnt);
+                 user_flash_write_data(fd,addr,dataout,ncnt,1);
+            }
+
+            if (Instring[0] != '@' && Instring[0] != ' ' && nbytes >= 256) {
+                 printf("addr 0x%08x: flash page write successful",addr);
+                 if(nbytes > 256) {
+                    printf("ERROR: *** Data over 256 hit");
+                    exit(0);
+                 } else {
+                     nbytes =0;
+                 }
+            } 
+
+
+        }
+    }
+    printf("total_bytes = %d\n",total_bytes);
+    fclose(f_open);
+
+}
+
+//#############################################
+//#  Page Read through Direct Access  (0X0B)          
+//#############################################
+void user_flash_read_cmd(int fd)
+{
+     uartm_wm_cmd(fd,0x30080004, 0x00001000,1);
+     uartm_wm_cmd(fd,0x30000004, 0x4080000b,1);
+     uartm_wm_cmd(fd,0x30080004, 0x00000000,1);
+}
+
+//# Flash Read Byte , addr : Address, exp_data: Expected Data, bcnt: valid byte cnt
+void user_flash_read_compare(int fd,unsigned int addr, unsigned int exp_data, unsigned int bcnt)
+{
+    uint mask = 0x00;
+    struct s_result result;
+    result.flag = 0;
+
+    result = uartm_rm_cmd(fd,addr);
+    if (bcnt == 1) mask = 0x000000FF;
+    else if (bcnt == 2) mask = 0x0000FFFF;
+    else if (bcnt == 3) mask = 0x00FFFFFF;
+    else if (bcnt == 4) mask = 0xFFFFFFFF;
+
+    if ((exp_data & mask) == (result.value & mask)) {
+        printf("Flash Read Addr: 0x%08x Data:0x%08x => Matched\n", addr, exp_data & mask);
+    } else {
+        printf("Flash Read Addr: 0x%08x Exp Data:0x%08x  Rxd Data:0x%08x => FAILED\n", addr, exp_data & mask, result.value & mask);
+    }
+}
+
+
+
+//##############################
+//# Flash Read and Verify 
+//##############################
+void user_flash_verify(int fd,const char *file_path) {
+   unsigned int addr,dataout,ncnt;
+   int nbytes, total_bytes;
+   char Instring[256];
+   char substring[8];
+   unsigned int tData;
+   nbytes = 0;
+   total_bytes = 0;
+   addr = 0;
+
+   printf("User Flash Read back and verify Started\n");
+   user_flash_read_cmd(fd);
+        
+   FILE* f_open;
+   f_open = fopen(file_path, "r");
+
+    while (fgets(Instring,256, f_open)) {
+        nbytes = num_word_per_line(Instring);
+        //printf("Line:%d :%ld :word:%d : %s\n",nbytes,strlen(Instring), nbytes,Instring);
+        if(Instring[0] == '@') {
+            nbytes = 0; // Indicate this is address byte, not data byte
+            strncpy(substring,Instring+1,8);
+            sscanf(substring,"%x",&addr);
+            printf("setting address to 0x%08x\n",addr);
+        } else {
+            ncnt = 0;
+            for(int i =0; i < nbytes; i++) {
+               strncpy(substring,Instring+(i*3),2);
+               substring[2] =0x00;
+               //printf("SubString:%d:%d:%d: %s\n",nbytes,i,ncnt,substring);
+               sscanf(substring,"%x",&tData);
+               int tShift = (8 * i);
+               dataout |= tData << tShift; 
+               ncnt = ncnt + 1;
+               total_bytes ++;
+               if(ncnt == 4){
+                   user_flash_read_compare(fd,addr,dataout,4);
+                   addr = addr+4;
+                   ncnt = 0;
+                   dataout = 0x00;
+                }
+            }
+            if(ncnt > 0 && ncnt < 4) {   // if line has less than 4 bytes
+                 user_flash_read_compare(fd,addr,dataout,ncnt);
+            }
+
+            if (Instring[0] != '@' && Instring[0] != ' ' && nbytes >= 256) {
+                 printf("addr 0x%08x: flash page write successful",addr);
+                 if(nbytes > 256) {
+                    printf("ERROR: *** Data over 256 hit");
+                    exit(0);
+                 } else {
+                     nbytes =0;
+                 }
+            } 
+        }
+    }
+    printf("total_bytes = %d\n",total_bytes);
+    fclose(f_open);
+
+}
+
  
  
 int main(int argc, char *argv[] )
@@ -345,7 +650,7 @@ int  _serialPort;
 struct s_result result;
 
   if( argc != 4 ) {
-      printf("Total Argument Received : %d \n",argc);
+      //printf("Total Argument Received : %d \n",argc);
       printf("Format: %s <COM> <BaudRate> <Hex File>  \n", argv[0]);
       exit(0);
    } 
@@ -362,12 +667,12 @@ struct s_result result;
   if (_serialPort < 0) { return 1; }
 
   user_reboot(_serialPort);
-  result = uartm_rm_cmd(_serialPort,0x30020000); //  # User Chip ID
-  printf("Riscduino Chip ID:0x%08x ", result.value);
- 
-
- 
- 
+  user_chip_id(_serialPort);
+  user_flash_device_id(_serialPort);
+  user_flash_chip_erase(_serialPort);
+  
+  user_flash_progam(_serialPort,filename);
+  user_flash_verify(_serialPort,filename);
  
   close(_serialPort);
   return 0;
