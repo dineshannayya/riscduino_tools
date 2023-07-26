@@ -1,17 +1,231 @@
-// Uses POSIX serial port functions to send and receive data from a Jrk G2.
-// NOTE: The Jrk's input mode must be "Serial / I2C / USB".
-// NOTE: The Jrk's serial mode must be set to "USB dual port" if you are
-//   connecting to it directly via USB.
-// NODE: The Jrk's serial mode must be set to "UART" if you are connecting to
-//   it via is TX and RX lines.
-// NOTE: You might need to change the 'const char * device' line below to
-//   specify the correct serial port.
- 
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+//// SPDX-FileCopyrightText: 2021 , Dinesh Annayya                                               ////
+////                                                                                             ////
+//// Licensed under the Apache License, Version 2.0 (the "License");                             ////
+//// you may not use this file except in compliance with the License.                            ////
+//// You may obtain a copy of the License at                                                     ////
+////                                                                                             ////
+////      http://www.apache.org/licenses/LICENSE-2.0                                             ////
+////                                                                                             ////
+//// Unless required by applicable law or agreed to in writing, software                         ////
+//// distributed under the License is distributed on an "AS IS" BASIS,                           ////
+//// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.                    ////
+//// See the License for the specific language governing permissions and                         ////
+//// limitations under the License.                                                              ////
+//// SPDX-License-Identifier: Apache-2.0                                                         ////
+//// SPDX-FileContributor: Created by Dinesh Annayya <dinesh.annayya@gmail.com>                  ////
+////                                                                                             ////
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+////                                                                                             ////
+////  rdnodude is firmware download application for Riscduino Series Chip                        ////
+////                                                                                             ////
+////  The riscduino Silicon project Details available at                                         ////
+////  https://github.com/dineshannayya/riscduino.git                                             ////
+////                                                                                             ////
+////  Author(s):                                                                                 ////
+////      - Dinesh Annayya, dinesh.annayya@gmail.com                                             ////
+////                                                                                             ////
+////  Revision :                                                                                 ////
+////    0.1 - 17-July 2023, Dinesh A                                                             ////
+////          Initial integration with firmware                                                  ////
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+
 #include <fcntl.h>
 #include <stdio.h>
 #include <unistd.h>
 #include <stdint.h>
 #include <termios.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/ioctl.h>
+
+struct s_result
+{
+   char flag;
+   unsigned int value;
+};
+
+unsigned char buffer[256];
+
+unsigned char wr_resp[14] = {'c','m','d',' ','s','u','c','c','e','s','s','\n','>','>'};
+
+
+struct s_result uartm_wm_cmd    (int fd,unsigned int addr, unsigned int data);
+void            user_reboot     ();
+int             open_serial_port(const char * device, uint32_t baud_rate);
+int             write_port      (int fd, uint8_t * buffer, size_t size);
+ssize_t         read_port       (int fd, uint8_t * buffer, size_t size);
+void            flush_rx        (int fd);
+void            flush_tx        (int fd);
+
+//------------------------------------------------
+// Flush Serial Port Rx Buffer
+//------------------------------------------------
+void flush_rx(int fd) {
+   ioctl(fd, TCFLSH, 0); // flush receive
+}
+
+//------------------------------------------------
+// Flush Serial Port Tx Buffer
+//------------------------------------------------
+void flush_tx(int fd) {
+   ioctl(fd, TCFLSH, 1); // flush transmit
+}
+
+
+/*******************************
+  Convert Byte Array to String
+**********************************/
+
+char * ByteArrayToString(uint8_t * buffer, int iSize) {
+    char *InString;
+    for(int i = 0; i < iSize; i++) {
+      InString += sprintf(InString, "%c", buffer[i]);
+    
+    }
+    return InString;
+}
+/*******************************
+  Extract Specific Integer Valiue of SubString
+**********************************/
+
+struct  s_result  ExtractReadResponse(char *buffer,int iSize,int iPos) {
+     struct s_result result;
+     result.flag = 0;
+
+        char *InString = ByteArrayToString(buffer, iSize);
+
+        char *delim = " ";
+        unsigned count = 0;
+        /* First call to strtok should be done with string and delimiter as first and second parameter*/
+        char *token = strtok(InString,delim);
+        count++;
+        if(strcmp(token,"Response:")){
+             /* Consecutive calls to the strtok should be with first parameter as NULL and second parameter as delimiter
+              * * return value of the strtok will be the split string based on delimiter*/
+             while(token != NULL) {
+                     printf("Token no. %d : %s \n", count,token);
+                     token = strtok(NULL,delim);
+                     count++;
+                     if(count == iPos) {
+                      result.flag = 1;
+                      break;
+                     }
+             }
+            result.value = atoi(token);
+        } else {
+             printf("Invalid Response: %s Received", buffer);
+        }
+        return result;
+}
+
+//------------------------------
+// Get Read Response
+//------------------------------
+ struct s_result uartm_read_response(int fd, uint addr)
+ {
+     struct s_result result;
+     result.flag = 0;
+
+     int iSize = read_port(fd,buffer, 14);
+     result = ExtractReadResponse(buffer,iSize,2);
+
+     return result;
+ }
+
+
+        //####################################################
+        //# Send rm <addr> command and check the response
+        //#  Return: Response Good  => true & <Read Data>
+        //#  Return: Response Bad  => false & '00'
+        //####################################################
+        struct s_result uartm_rm_cmd(int fd,unsigned int addr)
+        {
+            int retry;
+
+            struct s_result result;
+            result.flag = 0;
+            result.value = 0;
+
+            for (retry = 0; retry < 3; retry++)
+            {  // For invalid response retry for 3 times
+                 flush_rx(fd);
+                 sprintf(buffer,"rm %08x\n", addr);
+                //printf("%s",buffer);
+                 write_port(fd, buffer, 12);
+                result = uartm_read_response(fd, addr);
+                if(result.flag == 1) return result;
+            }
+            // After three retry exit
+            close(fd);
+            exit(0);
+            return result;
+
+        }
+
+//------------------------------------------------
+// Wait for Write Response
+//------------------------------------------------
+struct s_result uartm_write_response(int fd,unsigned int  addr, unsigned int  data) {
+            struct s_result result;
+            result.flag = 0;
+            int iChar;
+
+
+            read_port(fd,buffer, 14);
+            for(int i =0; i < 14; i++) {
+               if(buffer[i] != wr_resp[i]) {
+                 printf("Invalid Response: Received");
+                 result.flag = 0;
+               }
+            }
+            result.flag = 1;
+
+
+            return result;
+        }
+
+
+//####################################################
+//# Send wm <addr> <data> command and check the response
+//#  Return: Response Good  => '1' 
+//#  Return: Response Bad  => '0' 
+//####################################################
+        struct s_result uartm_wm_cmd(int fd,unsigned int addr, unsigned int data)
+        {
+            int retry;
+
+            struct s_result result;
+            result.flag = 0;
+            result.value = 0;
+
+
+            for (retry = 0; retry < 3; retry++)
+            {
+                flush_rx(fd);
+                sprintf(buffer,"wm %08x %08x\n", addr, data);
+                write_port(fd, buffer, 21);
+                result= uartm_write_response(fd,addr,data);
+                if (result.flag == 1) return result;
+            }
+            // After three retry exit
+            close(fd);
+            exit(0);
+            return result;
+        }
+
+//#############################################
+//#  User Reboot Command
+//#############################################
+void user_reboot(int fd) {
+    printf("Reseting up User Risc Core\n");
+    uartm_wm_cmd(fd,0x30080000,0x80000000); // Set Bit[31] = 1 to indicate user flashing to caravel
+    uartm_wm_cmd(fd,0x30080000,0x80000001);
+    uartm_wm_cmd(fd,0x30080004,0x00001000);
+    uartm_wm_cmd(fd,0x30020004,0x0000001F);
+}
+
+
  
 // Opens the specified serial port, sets it up for binary communication,
 // configures its read timeouts, and sets its baud rate.
@@ -61,7 +275,9 @@ int open_serial_port(const char * device, uint32_t baud_rate)
   case 9600:   cfsetospeed(&options, B9600);   break;
   case 19200:  cfsetospeed(&options, B19200);  break;
   case 38400:  cfsetospeed(&options, B38400);  break;
+  case 57600:  cfsetospeed(&options, B57600); break;
   case 115200: cfsetospeed(&options, B115200); break;
+  case 230400: cfsetospeed(&options, B230400); break;
   default:
     fprintf(stderr, "warning: baud rate %u is not supported, using 9600.\n",
       baud_rate);
@@ -106,11 +322,12 @@ ssize_t read_port(int fd, uint8_t * buffer, size_t size)
     ssize_t r = read(fd, buffer + received, size - received);
     if (r < 0)
     {
-      perror("failed to read from port");
+      perror("failed to read from serial port\n");
       return -1;
     }
     if (r == 0)
     {
+       printf("Exiting Serial port Loop due to Time Out");
       // Timeout
       break;
     }
@@ -119,88 +336,39 @@ ssize_t read_port(int fd, uint8_t * buffer, size_t size)
   return received;
 }
  
-// Sets the target, returning 0 on success and -1 on failure.
-//
-// For more information about what this command does, see the "Set Target"
-// command in the "Command reference" section of the Jrk G2 user's guide.
-int jrk_set_target(int fd, uint16_t target)
+ 
+ 
+int main(int argc, char *argv[] )
 {
-  if (target > 4095) { target = 4095; }
-  uint8_t command[2];
-  command[0] = 0xC0 + (target & 0x1F);
-  command[1] = (target >> 5) & 0x7F;
-  return write_port(fd, command, sizeof(command));
-}
+
+int  _serialPort;
+struct s_result result;
+
+  if( argc != 4 ) {
+      printf("Total Argument Received : %d \n",argc);
+      printf("Format: %s <COM> <BaudRate> <Hex File>  \n", argv[0]);
+      exit(0);
+   } 
+  //const char * device = "/dev/ttyACM0";
+  const char *device = argv[1];
+  uint32_t   baud_rate = atoi(argv[2]);
+  const char *filename = argv[3];
+
+  printf("COM PORT  = %s\n", device);
+  printf("Baud Rate = %d\n", baud_rate);
+  printf("Hex File  = %s\n", filename);
  
-// Gets one or more variables from the Jrk (without clearing them).
-// Returns 0 for success, -1 for failure.
-int jrk_get_variable(int fd, uint8_t offset, uint8_t * buffer, uint8_t length)
-{
-  uint8_t command[] = { 0xE5, offset, length };
-  int result = write_port(fd, command, sizeof(command));
-  if (result) { return -1; }
-  ssize_t received = read_port(fd, buffer, length);
-  if (received < 0) { return -1; }
-  if (received != length)
-  {
-    fprintf(stderr, "read timeout: expected %u bytes, got %zu\n",
-      length, received);
-    return -1;
-  }
-  return 0;
-}
+  _serialPort = open_serial_port(device, baud_rate);
+  if (_serialPort < 0) { return 1; }
+
+  user_reboot(_serialPort);
+  result = uartm_rm_cmd(_serialPort,0x30020000); //  # User Chip ID
+  printf("Riscduino Chip ID:0x%08x ", result.value);
  
-// Gets the Target variable from the jrk or returns -1 on failure.
-int jrk_get_target(int fd)
-{
-  uint8_t buffer[2];
-  int result = jrk_get_variable(fd, 0x02, buffer, sizeof(buffer));
-  if (result) { return -1; }
-  return buffer[0] + 256 * buffer[1];
-}
+
  
-// Gets the Feedback variable from the jrk or returns -1 on failure.
-int jrk_get_feedback(int fd)
-{
-  // 0x04 is the offset of the feedback variable in the "Variable reference"
-  // section of the Jrk user's guide.  The variable is two bytes long.
-  uint8_t buffer[2];
-  int result = jrk_get_variable(fd, 0x04, buffer, sizeof(buffer));
-  if (result) { return -1; }
-  return buffer[0] + 256 * buffer[1];
-}
  
-int main()
-{
-  // Choose the serial port name.  If the Jrk is connected directly via USB,
-  // you can run "jrk2cmd --cmd-port" to get the right name to use here.
-  // Linux USB example:          "/dev/ttyACM0"  (see also: /dev/serial/by-id)
-  // macOS USB example:          "/dev/cu.usbmodem001234562"
-  // Cygwin example:             "/dev/ttyS7"
-  const char * device = "/dev/ttyACM0";
  
-  // Choose the baud rate (bits per second).  This does not matter if you are
-  // connecting to the Jrk over USB.  If you are connecting via the TX and RX
-  // lines, this should match the baud rate in the Jrk's serial settings.
-  uint32_t baud_rate = 9600;
- 
-  int fd = open_serial_port(device, baud_rate);
-  if (fd < 0) { return 1; }
- 
-  int feedback = jrk_get_feedback(fd);
-  if (feedback < 0) { return 1; }
- 
-  printf("Feedback is %d.\n", feedback);
- 
-  int target = jrk_get_target(fd);
-  if (target < 0) { return 1; }
-  printf("Target is %d.\n", target);
- 
-  int new_target = (target < 2048) ? 2248 : 1848;
-  printf("Setting target to %d.\n", new_target);
-  int result = jrk_set_target(fd, new_target);
-  if (result) { return 1; }
- 
-  close(fd);
+  close(_serialPort);
   return 0;
 }
