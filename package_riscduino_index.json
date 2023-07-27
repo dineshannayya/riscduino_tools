@@ -12,7 +12,7 @@
 		{
 		    "category": "Riscduino",
 		    "name": "Riscduino Boards",
-		    "version": "1.0.5",
+		    "version": "1.0.6",
 		    "url": "https://github.com/dineshannayya/riscduino_tools/raw/main/riscduino_firmware-1.0.6.tar.gz",
 		    "checksum": "SHA-256:d984f5ca6f94dff4ecdc4840dcc609b8fb8fb91a5b6901f9d85cc1e1922e7740",
 	        "archiveFileName": "riscduino_firmware-1.0.6.tar.gz",
