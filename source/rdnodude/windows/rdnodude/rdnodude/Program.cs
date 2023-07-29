@@ -29,6 +29,11 @@
 ////  Revision :                                                                                 ////
 ////    0.1 - 17-July 2023, Dinesh A                                                             ////
 ////          Initial integration with firmware                                                  ////
+////    0.2 - 29-July 2023, Dinesh A                                                             ////
+////          A. DTR Toggle support added to reset the Riscduino chip                            ////
+////          B. As Flash Page Write is completes less than MiliSecond,                          ////
+////             We are bypassing read back status check to reduce the flash download time.      ////
+////                                                                                             ////
 /////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -37,6 +42,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.IO.Ports;
+using System.Timers;
 
 
 namespace rdnodude
@@ -51,6 +57,18 @@ namespace rdnodude
 
         static SerialPort _serialPort;
         static byte[] buffer = new byte[256];
+
+        static void delay(int Time_delay)
+        {
+            int i = 0;
+            //  ameTir = new System.Timers.Timer();
+            Timer _delayTimer = new System.Timers.Timer();
+            _delayTimer.Interval = Time_delay;
+            _delayTimer.AutoReset = false; //so that it only calls the method once
+            _delayTimer.Elapsed += (s, args) => i = 1;
+            _delayTimer.Start();
+            while (i == 0) { };
+        }
 
         // Get Read Response
         static s_result uartm_read_response(uint addr)
@@ -130,20 +148,31 @@ namespace rdnodude
             s_result result = new s_result();
             result.flag = false;
             result.value = 0;
+            try
+            {
 
-            for (retry = 0; retry < 3; retry++)
-            {  // For invalid response retry for 3 times
-                _serialPort.DiscardInBuffer();
-                string cmd = String.Format("rm {0:x8}\n", addr);
-                //Console.WriteLine(cmd);
-                _serialPort.Write(cmd);
-                result = uartm_read_response(addr);
-                if(result.flag == true) return result;
+                for (retry = 0; retry < 3; retry++)
+                {  // For invalid response retry for 3 times
+                    _serialPort.DiscardInBuffer();
+                    string cmd = String.Format("rm {0:x8}\n", addr);
+                    //Console.WriteLine(cmd);
+                    _serialPort.Write(cmd);
+                    result = uartm_read_response(addr);
+                    if (result.flag == true) return result;
+                }
+                // After three retry exit
+                _serialPort.Close();
+                Environment.Exit(0);
+                return result;
             }
-            // After three retry exit
-            _serialPort.Close();
-            Environment.Exit(0);
-            return result;
+            catch (Exception e)
+            {
+                Console.WriteLine("Exception: " + e.Message);
+                Environment.Exit(0);
+                return result;
+            }
+
+
 
         }
 
@@ -153,7 +182,7 @@ namespace rdnodude
         //#  Return: Response Good  => '1' 
         //#  Return: Response Bad  => '0' 
         //####################################################
-        static s_result uartm_wm_cmd(uint addr, uint data)
+        static s_result uartm_wm_cmd(uint addr, uint data,bool bRdCheck)
         {
             int retry;
 
@@ -167,8 +196,18 @@ namespace rdnodude
                 _serialPort.DiscardInBuffer();
                 string cmd = String.Format("wm {0:x8} {1:x8}\n", addr, data);
                 _serialPort.Write(cmd);
-                result= uartm_write_response(addr,data);
-                if (result.flag == true) return result;
+                if (bRdCheck)
+                {
+                    result = uartm_write_response(addr, data);
+                    if (result.flag == true) return result;
+                }
+                else
+                {
+                     System.Threading.Thread.Sleep(1);
+
+                    result.flag = true;
+                    return result;
+                }
                 //string inString = Encoding.Default.GetString(buffer);
                 //Console.WriteLine(byte_array);
             }
@@ -186,12 +225,12 @@ namespace rdnodude
             result.flag = false;
 
 
-            //uartm_wm_cmd(0x30080000,0x00000000)
-            //uartm_wm_cmd(0x30080000,0x00000001)
-            //uartm_wm_cmd(0x30080004,0x00001000)
-            //uartm_wm_cmd(0x30020004,0x0000001F)
-            uartm_wm_cmd(0x3000001c, 0x00000001);
-            uartm_wm_cmd(0x30000020, 0x040c009f);
+            //uartm_wm_cmd(0x30080000,0x00000000,true);
+            //uartm_wm_cmd(0x30080000,0x00000001,true);
+            //uartm_wm_cmd(0x30080004,0x00001000,true);
+            //uartm_wm_cmd(0x30020004,0x0000001F,true);
+            uartm_wm_cmd(0x3000001c, 0x00000001,true);
+            uartm_wm_cmd(0x30000020, 0x040c009f,true);
             result = uartm_rm_cmd(0x3000002c);
             Console.WriteLine("SPI Flash Device ID:0x{0:x8} ", result.value);
             if (result.value != 0x001640ef)
@@ -214,16 +253,16 @@ namespace rdnodude
             result.flag = false;
 
             Console.WriteLine("Flash Chip Erase: In Progress");
-            uartm_wm_cmd(0x30080004,0x00001000);
-            uartm_wm_cmd(0x3000001c,0x00000001);
-            uartm_wm_cmd(0x30000020,0x00000006);
-            uartm_wm_cmd(0x30000028,0x00000000);
-            uartm_wm_cmd(0x3000001c,0x00000001);
-            uartm_wm_cmd(0x30000020,0x002200d8);
-            uartm_wm_cmd(0x30000024,0x00000000);
-            uartm_wm_cmd(0x30000028,0x00000000);
-            uartm_wm_cmd(0x3000001c,0x00000001);
-            uartm_wm_cmd(0x30000020,0x040c0005);
+            uartm_wm_cmd(0x30080004,0x00001000,true);
+            uartm_wm_cmd(0x3000001c,0x00000001,true);
+            uartm_wm_cmd(0x30000020,0x00000006,true);
+            uartm_wm_cmd(0x30000028,0x00000000,true);
+            uartm_wm_cmd(0x3000001c,0x00000001,true);
+            uartm_wm_cmd(0x30000020,0x002200d8,true);
+            uartm_wm_cmd(0x30000024,0x00000000,true);
+            uartm_wm_cmd(0x30000028,0x00000000,true);
+            uartm_wm_cmd(0x3000001c,0x00000001,true);
+            uartm_wm_cmd(0x30000020,0x040c0005,true);
             result.value = 0xFF;
             while (result.value != 0x00)
             {
@@ -238,30 +277,37 @@ namespace rdnodude
         //###########################
         static void user_flash_write_cmd()
         {
-            uartm_wm_cmd(0x30080004, 0x00001000);
-            uartm_wm_cmd(0x3000001c, 0x00000001);
+            uartm_wm_cmd(0x30080004, 0x00001000,true);
+            uartm_wm_cmd(0x3000001c, 0x00000001,true);
         }
 
         //Flash Write Byte , addr : Address, exp_data: Expected Data, bcnt: valid byte cnt
-        static void user_flash_write_data(uint addr, uint data, uint bcnt)
+        static void user_flash_write_data(uint addr, uint data, uint bcnt, bool bCheckEnb)
         {
             s_result result = new s_result();
             result.flag = false;
 
             //Console.WriteLine("Flash Write Addr: {0:x8} Data:{1:x8}", addr, data);
-            uartm_wm_cmd(0x30000020, 0x00000006);
-            uartm_wm_cmd(0x30000028, 0x00000000);
-            //uartm_wm_cmd(0x3000001c,0x00000001);
-            uartm_wm_cmd(0x30000020, 0x00270002 | bcnt << 24);
-            uartm_wm_cmd(0x30000024, addr);
-            uartm_wm_cmd(0x30000028, data);
-            //uartm_wm_cmd(0x3000001c,0x00000001);
-            uartm_wm_cmd(0x30000020, 0x040c0005);
+            // WREN = 0x06 Command (Write Enable)
+            uartm_wm_cmd(0x30000020, 0x00000006, bCheckEnb);
+            uartm_wm_cmd(0x30000028, 0x00000000, bCheckEnb);
+            //uartm_wm_cmd(0x3000001c,0x00000001,true);
+            // PAGE-WR =0x02
+            uartm_wm_cmd(0x30000020, 0x00270002 | bcnt << 24, bCheckEnb);
+            uartm_wm_cmd(0x30000024, addr, bCheckEnb);
+            uartm_wm_cmd(0x30000028, data, bCheckEnb);
+            //uartm_wm_cmd(0x3000001c,0x00000001,bCheckEnb);
+            /*** Note: As Flash Page Write is completes less than MiliSecond, 
+             * We are bypassing read back status check to reduce the flash download time
+             * 
+             // FAST READ = 0x05
+            uartm_wm_cmd(0x30000020, 0x040c0005, bCheckEnb);
             result.value = 0xFF;
             while (result.value != 0x00)
             {
                 result = uartm_rm_cmd(0x3000002c);
             }
+            ****/
         }
 
 
@@ -270,9 +316,9 @@ namespace rdnodude
         //#############################################
         static void user_flash_read_cmd()
         {
-            uartm_wm_cmd(0x30080004, 0x00001000);
-            uartm_wm_cmd(0x30000004, 0x4080000b);
-            uartm_wm_cmd(0x30080004, 0x00000000);
+            uartm_wm_cmd(0x30080004, 0x00001000,true);
+            uartm_wm_cmd(0x30000004, 0x4080000b,true);
+            uartm_wm_cmd(0x30080004, 0x00000000,true);
         }
 
         //# Flash Read Byte , addr : Address, exp_data: Expected Data, bcnt: valid byte cnt
@@ -303,10 +349,10 @@ namespace rdnodude
         //#############################################
             static void user_reboot() {
                     Console.WriteLine("Reseting up User Risc Core");
-                    uartm_wm_cmd(0x30080000,0x80000000); // Set Bit[31] = 1 to indicate user flashing to caravel
-                    uartm_wm_cmd(0x30080000,0x80000001);
-                    uartm_wm_cmd(0x30080004,0x00001000);
-                    uartm_wm_cmd(0x30020004,0x0000001F);
+                    uartm_wm_cmd(0x30080000,0x80000000,true); // Set Bit[31] = 1 to indicate user flashing to caravel
+                    uartm_wm_cmd(0x30080000,0x80000001,true);
+                    uartm_wm_cmd(0x30080004,0x00001000,true);
+                    uartm_wm_cmd(0x30020004,0x0000001F,true);
              }
 
             //########################################
@@ -314,16 +360,16 @@ namespace rdnodude
             //########################################
             static void user_risc_wakeup() {
                 Console.WriteLine("Waking up User Risc Core");
-                uartm_wm_cmd(0x30080000,0x80000000);
-                uartm_wm_cmd(0x30080000,0x80000001);
-                uartm_wm_cmd(0x30080004,0x00001000);
-                uartm_wm_cmd(0x30020004,0x0000011F);
+                uartm_wm_cmd(0x30080000,0x80000000,true);
+                uartm_wm_cmd(0x30080000,0x80000001,true);
+                uartm_wm_cmd(0x30080004,0x00001000,true);
+                uartm_wm_cmd(0x30020004,0x0000011F,false);
             }
 
 //##############################
 //# Flash Write
 //##############################
-            static void user_flash_progam(String file_path) {
+            static void user_flash_progam(String file_path,bool bCheckEnb) {
 
                 uint addr,dataout,ncnt;
                 int nbytes, total_bytes;
@@ -372,7 +418,7 @@ namespace rdnodude
                                                 nbytes = nbytes+1;
                                                 if(ncnt == 4){
                                                     Console.WriteLine("Writing Flash Address: {0:x8} Data: {1:x8}", addr, dataout);
-                                                    user_flash_write_data(addr,dataout,4);
+                                                    user_flash_write_data(addr, dataout, 4, bCheckEnb);
                                                     addr = addr+4;
                                                     ncnt = 0;
                                                     dataout = 0x00;
@@ -381,7 +427,7 @@ namespace rdnodude
                                         }
                                         if(ncnt > 0 && ncnt < 4) {   // if line has less than 4 bytes
                                             Console.WriteLine("Writing Flash Partial DW, Address: {0:x8} Data: {1:x8} Cnt:{2:x1}", addr, dataout, ncnt);
-                                            user_flash_write_data(addr,dataout,ncnt);
+                                            user_flash_write_data(addr, dataout, ncnt, bCheckEnb);
                                         }
                                     }
 
@@ -537,6 +583,8 @@ namespace rdnodude
             s_result result = new s_result();
             result.flag = false;
 
+            Console.WriteLine("runodude (Rev:0.2)- A Riscduino firmware downloading application");
+
             if (args.Length == 3)
             {
 
@@ -560,14 +608,21 @@ namespace rdnodude
             _serialPort.WriteTimeout = 300;
             _serialPort.ReadTimeout = 300;
 
-            _serialPort.DiscardInBuffer();
 
-            user_reboot(); 
+            _serialPort.DtrEnable = true;
+            System.Threading.Thread.Sleep(100);
+            _serialPort.DtrEnable = false;
+
+            System.Threading.Thread.Sleep(2000);
+            _serialPort.DiscardInBuffer();
+            _serialPort.DiscardOutBuffer();
+
+            user_reboot();
             result = uartm_rm_cmd(0x30020000); //  # User Chip ID
             Console.WriteLine("Riscduino Chip ID:0x{0:x8} ", result.value);
             user_flash_device_id();
             user_flash_chip_erase();
-            user_flash_progam(HexFile);
+            user_flash_progam(HexFile,true);
             user_flash_verify(HexFile);
 
 
