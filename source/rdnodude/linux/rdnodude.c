@@ -504,13 +504,14 @@ void user_flash_progam(int fd,const char *file_path) {
             printf("setting address to 0x%08x\n",addr);
         } else {
             ncnt = 0;
+            dataout = 0;
             for(int i =0; i < nbytes; i++) {
                strncpy(substring,Instring+(i*3),2);
                substring[2] =0x00;
-               //printf("SubString:%d:%d:%d: %s\n",nbytes,i,ncnt,substring);
                sscanf(substring,"%x",&tData);
                int tShift = (8 * i);
                dataout |= tData << tShift; 
+               //printf("SubString:%d:%d:%d:%s:%x:%x\n",nbytes,i,ncnt,substring,tData,dataout);
                ncnt = ncnt + 1;
                total_bytes ++;
                if(ncnt == 4){
