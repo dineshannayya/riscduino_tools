@@ -33,6 +33,8 @@
 ////          A. DTR Toggle support added to reset the Riscduino chip                            ////
 ////          B. As Flash Page Write is completes less than MiliSecond,                          ////
 ////             We are bypassing read back status check to reduce the flash download time.      ////
+////    0.3 - 17-Aug 2023, Dinesh A                                                              ////
+////         A. Quad SPI Read func added                                                         ////
 ////                                                                                             ////
 /////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -54,6 +56,14 @@ namespace rdnodude
             public bool flag;
             public uint value;
         };
+
+        public const int SPI_FAST_READ         = 0x4080000b;
+        public const int SPI_READ_DUAL_OUTPUT  = 0x40A4003b;
+        public const int SPI_READ_DUAL_IO      = 0x509400bb;
+        public const int SPI_READ_QUAD_IO      = 0x619800EB;
+
+        public const int SPI_PAGE_WRITE        = 0x00270002;
+        public const int SPI_PAGE_QUAD_WRITE   = 0x00270032;
 
         static SerialPort _serialPort;
         static byte[] buffer = new byte[256];
@@ -273,7 +283,7 @@ namespace rdnodude
 
 
         //###########################
-        //### Write 4 Byte
+        //### Write CMD
         //###########################
         static void user_flash_write_cmd()
         {
@@ -312,12 +322,24 @@ namespace rdnodude
 
 
         //#############################################
+        //#  For Quad Func to work, we need to set status reg2 bit[1] = 1          
+        //#############################################
+        static void user_flash_quad_mode()
+        {
+            uartm_wm_cmd(0x30080004, 0x00001000,true);
+            uartm_wm_cmd(0x3000001c, 0x00000001,true);
+            uartm_wm_cmd(0x30000020, 0x01010031,true);
+            uartm_wm_cmd(0x30000028, 0x00000002,true);
+        }
+
+
+        //#############################################
         //#  Page Read through Direct Access  (0X0B)          
         //#############################################
         static void user_flash_read_cmd()
         {
             uartm_wm_cmd(0x30080004, 0x00001000,true);
-            uartm_wm_cmd(0x30000004, 0x4080000b,true);
+            uartm_wm_cmd(0x30000004, SPI_READ_QUAD_IO,true);
             uartm_wm_cmd(0x30080004, 0x00000000,true);
         }
 
@@ -583,7 +605,7 @@ namespace rdnodude
             s_result result = new s_result();
             result.flag = false;
 
-            Console.WriteLine("runodude (Rev:0.2)- A Riscduino firmware downloading application");
+            Console.WriteLine("runodude (Rev:0.3)- A Riscduino firmware downloading application");
 
             if (args.Length == 3)
             {
@@ -621,6 +643,7 @@ namespace rdnodude
             result = uartm_rm_cmd(0x30020000); //  # User Chip ID
             Console.WriteLine("Riscduino Chip ID:0x{0:x8} ", result.value);
             user_flash_device_id();
+            user_flash_quad_mode(); // Enable Quad Mode
             user_flash_chip_erase();
             user_flash_progam(HexFile,true);
             user_flash_verify(HexFile);
