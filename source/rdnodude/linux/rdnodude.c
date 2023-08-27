@@ -31,6 +31,8 @@
 ////    0.2 - 26 July 2023, Dinesh A                                                             ////
 ////          As current Flash write phase is around 4 Minute, To reduce the time, we are        ////
 ////          skipping write back response function and added just delay function                ////
+////    0.4 - 27 Aug 2023, Dinesh A                                                              ////
+////          Read compare Error count indication added                                          ////
 /////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #include <fcntl.h>
@@ -556,7 +558,7 @@ void user_flash_read_cmd(int fd)
 }
 
 //# Flash Read Byte , addr : Address, exp_data: Expected Data, bcnt: valid byte cnt
-void user_flash_read_compare(int fd,unsigned int addr, unsigned int exp_data, unsigned int bcnt)
+struct s_result user_flash_read_compare(int fd,unsigned int addr, unsigned int exp_data, unsigned int bcnt)
 {
     uint mask = 0x00;
     struct s_result result;
@@ -570,9 +572,12 @@ void user_flash_read_compare(int fd,unsigned int addr, unsigned int exp_data, un
 
     if ((exp_data & mask) == (result.value & mask)) {
         printf("Flash Read Addr: 0x%08x Data:0x%08x => Matched\n", addr, exp_data & mask);
+        result.flag = 0;
     } else {
         printf("Flash Read Addr: 0x%08x Exp Data:0x%08x  Rxd Data:0x%08x => FAILED\n", addr, exp_data & mask, result.value & mask);
+        result.flag = 1;
     }
+    return result;
 }
 
 
@@ -585,10 +590,12 @@ void user_flash_verify(int fd,const char *file_path) {
    int nbytes, total_bytes;
    char Instring[256];
    char substring[8];
-   unsigned int tData;
+   unsigned int tData = 0;
    nbytes = 0;
    total_bytes = 0;
    addr = 0;
+   struct s_result result;
+   unsigned int iErrCnt = 0;
 
    printf("User Flash Read back and verify Started\n");
    user_flash_read_cmd(fd);
@@ -596,6 +603,7 @@ void user_flash_verify(int fd,const char *file_path) {
    FILE* f_open;
    f_open = fopen(file_path, "r");
 
+    dataout = 0x00;
     while (fgets(Instring,256, f_open)) {
         nbytes = num_word_per_line(Instring);
         //printf("Line:%d :%ld :word:%d : %s\n",nbytes,strlen(Instring), nbytes,Instring);
@@ -616,14 +624,16 @@ void user_flash_verify(int fd,const char *file_path) {
                ncnt = ncnt + 1;
                total_bytes ++;
                if(ncnt == 4){
-                   user_flash_read_compare(fd,addr,dataout,4);
+                   result = user_flash_read_compare(fd,addr,dataout,4);
+                   iErrCnt +=result.flag;
                    addr = addr+4;
                    ncnt = 0;
                    dataout = 0x00;
                 }
             }
             if(ncnt > 0 && ncnt < 4) {   // if line has less than 4 bytes
-                 user_flash_read_compare(fd,addr,dataout,ncnt);
+                 result = user_flash_read_compare(fd,addr,dataout,ncnt);
+                 iErrCnt +=result.flag;
             }
 
             if (Instring[0] != '@' && Instring[0] != ' ' && nbytes >= 256) {
@@ -638,6 +648,9 @@ void user_flash_verify(int fd,const char *file_path) {
         }
     }
     printf("total_bytes = %d\n",total_bytes);
+    if(iErrCnt > 0) {
+        printf("ERROR: Total Read compare failure %d detected \n",iErrCnt);
+    }
     fclose(f_open);
 
 }
@@ -650,6 +663,7 @@ int main(int argc, char *argv[] )
 int  _serialPort;
 struct s_result result;
 
+  printf("runodude (Rev:0.3)- A Riscduino firmware downloading application");
   if( argc != 4 ) {
       //printf("Total Argument Received : %d \n",argc);
       printf("Format: %s <COM> <BaudRate> <Hex File>  \n", argv[0]);
