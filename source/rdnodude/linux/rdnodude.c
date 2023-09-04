@@ -33,6 +33,8 @@
 ////          skipping write back response function and added just delay function                ////
 ////    0.4 - 27 Aug 2023, Dinesh A                                                              ////
 ////          Read compare Error count indication added                                          ////
+////    0.5 - 4 Sept 2023, Dinesh A                                                              ////
+////          Memory Write/Read to to SRAM Location (0x08xx_xxxx) support added                  ////
 /////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #include <fcntl.h>
@@ -63,6 +65,7 @@ ssize_t         read_port       (int fd, uint8_t * buffer, size_t size);
 void            flush_rx        (int fd);
 void            flush_tx        (int fd);
 
+unsigned int bank_addr = 0x00;
 //------------------------------------------------
 // Flush Serial Port Rx Buffer
 //------------------------------------------------
@@ -221,8 +224,14 @@ void user_reboot(int fd) {
     printf("Reseting up User Risc Core\n");
     uartm_wm_cmd(fd,0x30080000,0x80000000,1); // Set Bit[31] = 1 to indicate user flashing to caravel
     uartm_wm_cmd(fd,0x30080000,0x80000001,1);
-    uartm_wm_cmd(fd,0x30080004,0x00001000,1);
+    bank_addr = 0x00001000;
+    uartm_wm_cmd(fd,0x30080004,bank_addr,1);
     uartm_wm_cmd(fd,0x30020004,0x0000001F,1);
+     // Setting Serial Flash to Quad Mode
+     uartm_wm_cmd(fd,0x30000004, 0x619800EB,1);
+     // Setting Serial SRAM to Quad Mode
+     uartm_wm_cmd(fd,0x3000000C, 0x408a0003,1);
+     uartm_wm_cmd(fd,0x30000010, 0x708a0002,1);
 }
 
 
@@ -394,13 +403,13 @@ void user_flash_chip_erase(int fd){
      result.flag = 0;
 
      printf("Flash Chip Erase: In Progress\n");
-     uartm_wm_cmd(fd,0x30080004,0x00001000,1);
+     bank_addr = 0x00001000;
+     uartm_wm_cmd(fd,0x30080004,bank_addr,1);
      uartm_wm_cmd(fd,0x3000001c,0x00000001,1);
      uartm_wm_cmd(fd,0x30000020,0x00000006,1);
      uartm_wm_cmd(fd,0x30000028,0x00000000,1);
      uartm_wm_cmd(fd,0x3000001c,0x00000001,1);
-     uartm_wm_cmd(fd,0x30000020,0x002200d8,1);
-     uartm_wm_cmd(fd,0x30000024,0x00000000,1);
+     uartm_wm_cmd(fd,0x30000020,0x000000c7,1);
      uartm_wm_cmd(fd,0x30000028,0x00000000,1);
      uartm_wm_cmd(fd,0x3000001c,0x00000001,1);
      uartm_wm_cmd(fd,0x30000020,0x040c0005,1);
@@ -417,7 +426,8 @@ void user_flash_chip_erase(int fd){
 //###########################
 static void user_flash_write_cmd(int fd)
 {
-    uartm_wm_cmd(fd,0x30080004, 0x00001000,1);
+    bank_addr = 0x00001000;
+    uartm_wm_cmd(fd,0x30080004,bank_addr,1);
     uartm_wm_cmd(fd,0x3000001c, 0x00000001,1);
 }
 
@@ -475,6 +485,17 @@ void user_flash_write_data(int fd,unsigned int addr, unsigned int data, unsigned
     }
 }
 
+void user_sram_write_data(int fd,unsigned int addr, unsigned int data,unsigned int bcnt,char bEnbRdCheck) {
+    struct s_result result ;
+    result.flag = 0;
+
+    //Console.WriteLine("SRAM Write Addr: {0:x8} Data:{1:x8}", addr, data);
+    bank_addr = addr>> 16;
+    uartm_wm_cmd(fd,0x30080004,bank_addr,1);
+    uartm_wm_cmd(fd,addr,data,bEnbRdCheck);
+
+}
+
 
 
 //##############################
@@ -517,16 +538,26 @@ void user_flash_progam(int fd,const char *file_path) {
                ncnt = ncnt + 1;
                total_bytes ++;
                if(ncnt == 4){
-                   printf("Writing Flash Address: 0x%08x Data: 0x%08x\n", addr, dataout);
-                   user_flash_write_data(fd,addr,dataout,4,1);
+                   if(addr < 0x08000000) {
+                      printf("Writing Flash Address: 0x%08x Data: 0x%08x\n", addr, dataout);
+                      
+                      user_flash_write_data(fd,addr,dataout,4,1);
+                   } else {
+                      user_sram_write_data(fd,addr,dataout,4,1);
+                   }
                    addr = addr+4;
                    ncnt = 0;
                    dataout = 0x00;
                 }
             }
             if(ncnt > 0 && ncnt < 4) {   // if line has less than 4 bytes
-                 printf("Writing Flash Partial DW, Address: 0x%08x Data: %0x8x Cnt:%d", addr, dataout, ncnt);
-                 user_flash_write_data(fd,addr,dataout,ncnt,1);
+                 printf("Writing Flash Partial DW, Address: 0x%08x Data: %08x Cnt:%d", addr, dataout, ncnt);
+                 if(addr < 0x08000000) {
+                    printf("Writing Flash Address: 0x%08x Data: 0x%08x\n", addr, dataout);
+                    user_flash_write_data(fd,addr,dataout,ncnt,1);
+                 } else {
+                    user_sram_write_data(fd,addr,dataout,ncnt,1);
+                 }
             }
 
             if (Instring[0] != '@' && Instring[0] != ' ' && nbytes >= 256) {
@@ -552,9 +583,8 @@ void user_flash_progam(int fd,const char *file_path) {
 //#############################################
 void user_flash_read_cmd(int fd)
 {
-     uartm_wm_cmd(fd,0x30080004, 0x00001000,1);
-     uartm_wm_cmd(fd,0x30000004, 0x4080000b,1);
-     uartm_wm_cmd(fd,0x30080004, 0x00000000,1);
+     bank_addr = 0x00000000;
+     uartm_wm_cmd(fd,0x30080004,bank_addr,1);
 }
 
 //# Flash Read Byte , addr : Address, exp_data: Expected Data, bcnt: valid byte cnt
@@ -563,7 +593,13 @@ struct s_result user_flash_read_compare(int fd,unsigned int addr, unsigned int e
     uint mask = 0x00;
     struct s_result result;
     result.flag = 0;
-
+     // Check if there is change in bank address
+    unsigned int new_bank = addr >> 16;
+    if(bank_addr != new_bank) { 
+     bank_addr = addr >> 16;
+     printf("Changing Bank Address: %x\n",bank_addr);
+     uartm_wm_cmd(fd,0x30080004,bank_addr,1);
+    }
     result = uartm_rm_cmd(fd,addr);
     if (bcnt == 1) mask = 0x000000FF;
     else if (bcnt == 2) mask = 0x0000FFFF;
@@ -609,6 +645,7 @@ void user_flash_verify(int fd,const char *file_path) {
         //printf("Line:%d :%ld :word:%d : %s\n",nbytes,strlen(Instring), nbytes,Instring);
         if(Instring[0] == '@') {
             nbytes = 0; // Indicate this is address byte, not data byte
+            dataout = 0;
             strncpy(substring,Instring+1,8);
             sscanf(substring,"%x",&addr);
             printf("setting address to 0x%08x\n",addr);
@@ -663,7 +700,7 @@ int main(int argc, char *argv[] )
 int  _serialPort;
 struct s_result result;
 
-  printf("runodude (Rev:0.3)- A Riscduino firmware downloading application");
+  printf("runodude (Rev:0.5)- A Riscduino firmware downloading application");
   if( argc != 4 ) {
       //printf("Total Argument Received : %d \n",argc);
       printf("Format: %s <COM> <BaudRate> <Hex File>  \n", argv[0]);
