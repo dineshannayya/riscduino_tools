@@ -35,6 +35,8 @@
 ////          Read compare Error count indication added                                          ////
 ////    0.5 - 4 Sept 2023, Dinesh A                                                              ////
 ////          Memory Write/Read to to SRAM Location (0x08xx_xxxx) support added                  ////
+////    0.6 - 6 Sept 2023, Dinesh A                                                              ////
+////          Auto Wakeup feature enabled
 /////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #include <fcntl.h>
@@ -78,6 +80,60 @@ void flush_rx(int fd) {
 //------------------------------------------------
 void flush_tx(int fd) {
    ioctl(fd, TCOFLUSH); // flush transmit
+}
+
+
+int set_DTR(int fd, unsigned short level)
+{
+	int status;
+
+	if (fd < 0) {
+		perror("Set_DTR(): Invalid File descriptor");
+		return -1;
+	}
+
+	if (ioctl(fd, TIOCMGET, &status) == -1) {
+		perror("set_DTR(): TIOCMGET");
+		return -1;
+	}
+
+	if (level) 
+		status |= TIOCM_DTR;
+	else 
+		status &= ~TIOCM_DTR;
+
+	if (ioctl(fd, TIOCMSET, &status) == -1) {
+		perror("set_DTR(): TIOCMSET");
+		return -1;
+	}
+	return 0;
+
+}
+
+int set_RTS(int fd, unsigned short level)
+{
+	int status;
+
+	if (fd < 0) {
+		perror("Invalid File descriptor");
+		return -1;
+	}
+
+	if (ioctl(fd, TIOCMGET, &status) == -1) {
+		perror("set_RTS(): TIOCMGET");
+		return -1;
+	}
+
+	if (level) 
+		status |= TIOCM_RTS;
+	else 
+		status &= ~TIOCM_RTS;
+
+	if (ioctl(fd, TIOCMSET, &status) == -1) {
+		perror("set_RTS(): TIOCMSET");
+		return -1;
+	}
+	return 0;
 }
 
 
@@ -234,6 +290,15 @@ void user_reboot(int fd) {
      uartm_wm_cmd(fd,0x30000010, 0x708a0002,1);
 }
 
+//#############################################
+//#  User Wakeup Command
+//#############################################
+void user_wakeup(int fd) {
+    printf("Waking up r Risc Core\n");
+    bank_addr = 0x00001000;
+    uartm_wm_cmd(fd,0x30080004,bank_addr,1);
+    uartm_wm_cmd(fd,0x30020004,0x0000011F,0);
+}
 
  
 // Opens the specified serial port, sets it up for binary communication,
@@ -700,7 +765,7 @@ int main(int argc, char *argv[] )
 int  _serialPort;
 struct s_result result;
 
-  printf("runodude (Rev:0.5)- A Riscduino firmware downloading application");
+  printf("runodude (Rev:0.6)- A Riscduino firmware downloading application");
   if( argc != 4 ) {
       //printf("Total Argument Received : %d \n",argc);
       printf("Format: %s <COM> <BaudRate> <Hex File>  \n", argv[0]);
@@ -725,6 +790,7 @@ struct s_result result;
   
   user_flash_progam(_serialPort,filename);
   user_flash_verify(_serialPort,filename);
+  user_wakeup(_serialPort);
  
   close(_serialPort);
   return 0;
