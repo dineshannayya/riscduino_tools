@@ -297,16 +297,16 @@ void user_wakeup(int fd) {
     printf("Waking up r Risc Core\n");
     bank_addr = 0x00001000;
     uartm_wm_cmd(fd,0x30080004,bank_addr,1);
-	uartm_wm_cmd(0x30080000, 0x00000000, true); 
-    uartm_wm_cmd(0x30080000, 0x00000001, true);
-    uartm_wm_cmd(0x30020004, 0x0000001F, true);
+	uartm_wm_cmd(fd,0x30080000, 0x00000000, 1); 
+    uartm_wm_cmd(fd,0x30080000, 0x00000001, 1);
+    uartm_wm_cmd(fd,0x30020004, 0x0000001F, 1);
     // Setting Serial Flash to Quad Mode
-    uartm_wm_cmd(0x30000004, 0x619800EB, true);
+    uartm_wm_cmd(fd,0x30000004, 0x619800EB, 1);
     // Setting Serial SRAM to Quad Mode
-    uartm_wm_cmd(0x3000000C, 0x408a0003, true);
-    uartm_wm_cmd(0x30000010, 0x708a0002, true);
+    uartm_wm_cmd(fd,0x3000000C, 0x408a0003, 1);
+    uartm_wm_cmd(fd,0x30000010, 0x708a0002, 1);
     // Remove Riscv Core Reset
-    uartm_wm_cmd(0x30020004, 0x0000011F, false);
+    uartm_wm_cmd(fd,0x30020004, 0x0000011F, 0);
 }
 
  
