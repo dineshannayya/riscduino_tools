@@ -297,7 +297,16 @@ void user_wakeup(int fd) {
     printf("Waking up r Risc Core\n");
     bank_addr = 0x00001000;
     uartm_wm_cmd(fd,0x30080004,bank_addr,1);
-    uartm_wm_cmd(fd,0x30020004,0x0000011F,0);
+	uartm_wm_cmd(0x30080000, 0x00000000, true); 
+    uartm_wm_cmd(0x30080000, 0x00000001, true);
+    uartm_wm_cmd(0x30020004, 0x0000001F, true);
+    // Setting Serial Flash to Quad Mode
+    uartm_wm_cmd(0x30000004, 0x619800EB, true);
+    // Setting Serial SRAM to Quad Mode
+    uartm_wm_cmd(0x3000000C, 0x408a0003, true);
+    uartm_wm_cmd(0x30000010, 0x708a0002, true);
+    // Remove Riscv Core Reset
+    uartm_wm_cmd(0x30020004, 0x0000011F, false);
 }
 
  
@@ -541,6 +550,8 @@ void user_flash_write_data(int fd,unsigned int addr, unsigned int data, unsigned
     uartm_wm_cmd(fd,0x30000024, addr,bEnbRdCheck);
     uartm_wm_cmd(fd,0x30000028, data,bEnbRdCheck);
     //uartm_wm_cmd(fd,0x3000001c,0x00000001,bEnbRdCheck);
+	
+	/*** We have Masked Read Back for Flash write, as our process is slow, if needed we need to enable this one
     uartm_wm_cmd(fd,0x30000020, 0x040c0005,bEnbRdCheck);
 
     result.value = 0xFF;
@@ -548,6 +559,7 @@ void user_flash_write_data(int fd,unsigned int addr, unsigned int data, unsigned
     {
         result = uartm_rm_cmd(fd,0x3000002c);
     }
+	*****/
 }
 
 void user_sram_write_data(int fd,unsigned int addr, unsigned int data,unsigned int bcnt,char bEnbRdCheck) {
@@ -603,13 +615,8 @@ void user_flash_progam(int fd,const char *file_path) {
                ncnt = ncnt + 1;
                total_bytes ++;
                if(ncnt == 4){
-                   if(addr < 0x08000000) {
-                      printf("Writing Flash Address: 0x%08x Data: 0x%08x\n", addr, dataout);
-                      
-                      user_flash_write_data(fd,addr,dataout,4,1);
-                   } else {
-                      user_sram_write_data(fd,addr,dataout,4,1);
-                   }
+                   printf("Writing Flash Address: 0x%08x Data: 0x%08x\n", addr, dataout);
+                   user_flash_write_data(fd,addr,dataout,4,1);
                    addr = addr+4;
                    ncnt = 0;
                    dataout = 0x00;
@@ -617,12 +624,8 @@ void user_flash_progam(int fd,const char *file_path) {
             }
             if(ncnt > 0 && ncnt < 4) {   // if line has less than 4 bytes
                  printf("Writing Flash Partial DW, Address: 0x%08x Data: %08x Cnt:%d", addr, dataout, ncnt);
-                 if(addr < 0x08000000) {
-                    printf("Writing Flash Address: 0x%08x Data: 0x%08x\n", addr, dataout);
-                    user_flash_write_data(fd,addr,dataout,ncnt,1);
-                 } else {
-                    user_sram_write_data(fd,addr,dataout,ncnt,1);
-                 }
+                 printf("Writing Flash Address: 0x%08x Data: 0x%08x\n", addr, dataout);
+                 user_flash_write_data(fd,addr,dataout,ncnt,1);
             }
 
             if (Instring[0] != '@' && Instring[0] != ' ' && nbytes >= 256) {
@@ -710,10 +713,12 @@ void user_flash_verify(int fd,const char *file_path) {
         //printf("Line:%d :%ld :word:%d : %s\n",nbytes,strlen(Instring), nbytes,Instring);
         if(Instring[0] == '@') {
             nbytes = 0; // Indicate this is address byte, not data byte
-            dataout = 0;
             strncpy(substring,Instring+1,8);
             sscanf(substring,"%x",&addr);
             printf("setting address to 0x%08x\n",addr);
+			total_bytes += nbytes;
+            nbytes = 0;
+            dataout = 0;
         } else {
             ncnt = 0;
             for(int i =0; i < nbytes; i++) {
@@ -748,6 +753,11 @@ void user_flash_verify(int fd,const char *file_path) {
                  }
             } 
         }
+    }
+    // Managing the Last Less than 256 Byte Access
+    if (nbytes > 0)
+    {
+        total_bytes += nbytes;
     }
     printf("total_bytes = %d\n",total_bytes);
     if(iErrCnt > 0) {

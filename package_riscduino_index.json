@@ -62,11 +62,11 @@
 		    "name": "rdnodude",
 		    "systems": [
 			{
-			    "url": "https://github.com/dineshannayya/riscduino_tools/raw/main/rdnodude-0.0.3-2023.08.17-x86_64-w64-mingw32.zip",
-			    "checksum": "SHA-256:2c0ae5c726c9a7a34a3a5bdb0be6fa6913ebd3f492312756f5cdd3464e23f510",
+			    "url": "https://github.com/dineshannayya/riscduino_tools/raw/main/rdnodude-0.0.6-2023.09.07-x86_64-w64-mingw32.zip",
+			    "checksum": "SHA-256:2bf7d54a15405580ed7705fb343335625f66bcf10a266d7aef5534e8bbe9ba62",
 			    "host": "i686-mingw32",
-			    "archiveFileName": "rdnodude-0.0.3-2023.08.17-x86_64-w64-mingw32.zip",
-			    "size": "5499"
+			    "archiveFileName": "rdnodude-0.0.6-2023.09.07-x86_64-w64-mingw32.zip",
+			    "size": "5701"
 			},
 			{
 			    "url": "https://github.com/dineshannayya/riscduino_tools/raw/main/rdnodude-0.0.6-2023.09.06-x86_64-i686-pc-linux-gnu.tar.gz",

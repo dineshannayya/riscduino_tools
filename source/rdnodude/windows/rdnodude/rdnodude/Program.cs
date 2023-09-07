@@ -35,7 +35,14 @@
 ////             We are bypassing read back status check to reduce the flash download time.      ////
 ////    0.3 - 17-Aug 2023, Dinesh A                                                              ////
 ////         A. Quad SPI Read func added                                                         ////
-////                                                                                             ////
+////    0.4 - 27 Aug 2023, Dinesh A                                                              ////
+////          Read compare Error count indication added                                          ////
+////    0.5 - 4 Sept 2023, Dinesh A                                                              ////
+////          A. Bank Switch Supported for Address Crossing 0xFFFF                               ////
+////          B. Flash Sector Erase function changed Chip Erase                                  ////
+////    0.6 - 6 Sept 2023, Dinesh A                                                              ////
+////          Auto Wakeup feature enabled
+
 /////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -67,6 +74,8 @@ namespace rdnodude
 
         static SerialPort _serialPort;
         static byte[] buffer = new byte[256];
+
+        static uint bank_addr = 0x00;
 
         static void delay(int Time_delay)
         {
@@ -263,13 +272,13 @@ namespace rdnodude
             result.flag = false;
 
             Console.WriteLine("Flash Chip Erase: In Progress");
-            uartm_wm_cmd(0x30080004,0x00001000,true);
+            bank_addr = 0x1000;
+            uartm_wm_cmd(0x30080004,bank_addr, true);
             uartm_wm_cmd(0x3000001c,0x00000001,true);
             uartm_wm_cmd(0x30000020,0x00000006,true);
             uartm_wm_cmd(0x30000028,0x00000000,true);
             uartm_wm_cmd(0x3000001c,0x00000001,true);
-            uartm_wm_cmd(0x30000020,0x002200d8,true);
-            uartm_wm_cmd(0x30000024,0x00000000,true);
+            uartm_wm_cmd(0x30000020,0x000000c7, true);
             uartm_wm_cmd(0x30000028,0x00000000,true);
             uartm_wm_cmd(0x3000001c,0x00000001,true);
             uartm_wm_cmd(0x30000020,0x040c0005,true);
@@ -287,7 +296,8 @@ namespace rdnodude
         //###########################
         static void user_flash_write_cmd()
         {
-            uartm_wm_cmd(0x30080004, 0x00001000,true);
+            bank_addr = 0x1000;
+            uartm_wm_cmd(0x30080004, bank_addr, true);
             uartm_wm_cmd(0x3000001c, 0x00000001,true);
         }
 
@@ -306,31 +316,16 @@ namespace rdnodude
             uartm_wm_cmd(0x30000020, 0x00270002 | bcnt << 24, bCheckEnb);
             uartm_wm_cmd(0x30000024, addr, bCheckEnb);
             uartm_wm_cmd(0x30000028, data, bCheckEnb);
-            //uartm_wm_cmd(0x3000001c,0x00000001,bCheckEnb);
-            /*** Note: As Flash Page Write is completes less than MiliSecond, 
-             * We are bypassing read back status check to reduce the flash download time
-             * 
-             // FAST READ = 0x05
-            uartm_wm_cmd(0x30000020, 0x040c0005, bCheckEnb);
+            /** We have Masked Read Back for Flash write, as our process is slow, if needed we need to enable this one
+            uartm_wm_cmd(0x30000020, 0x040c0005, true);
             result.value = 0xFF;
             while (result.value != 0x00)
             {
                 result = uartm_rm_cmd(0x3000002c);
             }
-            ****/
+             ****/
         }
 
-
-        //#############################################
-        //#  For Quad Func to work, we need to set status reg2 bit[1] = 1          
-        //#############################################
-        static void user_flash_quad_mode()
-        {
-            uartm_wm_cmd(0x30080004, 0x00001000,true);
-            uartm_wm_cmd(0x3000001c, 0x00000001,true);
-            uartm_wm_cmd(0x30000020, 0x01010031,true);
-            uartm_wm_cmd(0x30000028, 0x00000002,true);
-        }
 
 
         //#############################################
@@ -338,18 +333,24 @@ namespace rdnodude
         //#############################################
         static void user_flash_read_cmd()
         {
-            uartm_wm_cmd(0x30080004, 0x00001000,true);
-            uartm_wm_cmd(0x30000004, SPI_READ_QUAD_IO,true);
-            uartm_wm_cmd(0x30080004, 0x00000000,true);
+            bank_addr = 0x0000;
+            uartm_wm_cmd(0x30080004, bank_addr, true);
         }
 
         //# Flash Read Byte , addr : Address, exp_data: Expected Data, bcnt: valid byte cnt
-        static void user_flash_read_compare(uint addr, uint exp_data, uint bcnt)
+        static s_result user_flash_read_compare(uint addr, uint exp_data, uint bcnt)
         {
             uint mask = 0x00;
             s_result result = new s_result();
             result.flag = false;
 
+             // Check if there is change in bank address
+            uint new_bank = addr >> 16;
+            if(bank_addr != new_bank) { 
+                 bank_addr = addr >> 16;
+                 Console.WriteLine("Changing Bank Address: {0:x8}", bank_addr);
+                 uartm_wm_cmd(0x30080004,bank_addr,true);
+            }
             result = uartm_rm_cmd(addr);
             if (bcnt == 1) mask = 0x000000FF;
             else if (bcnt == 2) mask = 0x0000FFFF;
@@ -359,11 +360,15 @@ namespace rdnodude
             if ((exp_data & mask) == (result.value & mask))
             {
                 Console.WriteLine("Flash Read Addr: {0:x8} Data:{1:x8} => Matched", addr, exp_data & mask);
+                result.flag = false;
             }
             else
             {
                 Console.WriteLine("Flash Read Addr: {0:x8} Exp Data:{1:x8}  Rxd Data:{2:x8} => FAILED", addr, exp_data & mask, result.value & mask);
+                result.flag = true;
             }
+
+            return result;
         }
 
         //#############################################
@@ -373,8 +378,14 @@ namespace rdnodude
                     Console.WriteLine("Reseting up User Risc Core");
                     uartm_wm_cmd(0x30080000,0x80000000,true); // Set Bit[31] = 1 to indicate user flashing to caravel
                     uartm_wm_cmd(0x30080000,0x80000001,true);
-                    uartm_wm_cmd(0x30080004,0x00001000,true);
+                    bank_addr = 0x00001000;
+                    uartm_wm_cmd(0x30080004, bank_addr, true);
                     uartm_wm_cmd(0x30020004,0x0000001F,true);
+                    // Setting Serial Flash to Quad Mode
+                    uartm_wm_cmd(0x30000004, 0x619800EB, true);
+                    // Setting Serial SRAM to Quad Mode
+                    uartm_wm_cmd(0x3000000C, 0x408a0003, true);
+                    uartm_wm_cmd(0x30000010, 0x708a0002, true);
              }
 
             //########################################
@@ -382,11 +393,21 @@ namespace rdnodude
             //########################################
             static void user_risc_wakeup() {
                 Console.WriteLine("Waking up User Risc Core");
-                uartm_wm_cmd(0x30080000,0x80000000,true);
-                uartm_wm_cmd(0x30080000,0x80000001,true);
-                uartm_wm_cmd(0x30080004,0x00001000,true);
-                uartm_wm_cmd(0x30020004,0x0000011F,false);
+                bank_addr = 0x00001000;
+                uartm_wm_cmd(0x30080004, bank_addr, true);
+                uartm_wm_cmd(0x30080000, 0x00000000, true); 
+                uartm_wm_cmd(0x30080000, 0x00000001, true);
+                uartm_wm_cmd(0x30020004, 0x0000001F, true);
+                // Setting Serial Flash to Quad Mode
+                uartm_wm_cmd(0x30000004, 0x619800EB, true);
+                // Setting Serial SRAM to Quad Mode
+                uartm_wm_cmd(0x3000000C, 0x408a0003, true);
+                uartm_wm_cmd(0x30000010, 0x708a0002, true);
+                // Remove Riscv Core Reset
+                uartm_wm_cmd(0x30020004, 0x0000011F, false);
+
             }
+
 
 //##############################
 //# Flash Write
@@ -500,6 +521,8 @@ namespace rdnodude
                 nbytes = 0;
                 total_bytes = 0;
                 addr = 0;
+                s_result result = new s_result();
+                uint iErrCnt = 0;
 
                 Console.WriteLine("User Flash Read back and verify Started");
                 user_flash_read_cmd();
@@ -526,6 +549,7 @@ namespace rdnodude
                                         Console.WriteLine("setting address to {0:x8}", addr);
                                         total_bytes += nbytes;
                                         nbytes = 0;
+                                        dataout = 0;
                                     }
                                     else
                                     { // If Data
@@ -547,7 +571,8 @@ namespace rdnodude
                                                 nbytes = nbytes + 1;
                                                 if (ncnt == 4)
                                                 {
-                                                    user_flash_read_compare(addr, dataout, 4);
+                                                    result = user_flash_read_compare(addr, dataout, 4);
+                                                    if(result.flag == true)  iErrCnt ++;
                                                     addr = addr + 4;
                                                     ncnt = 0;
                                                     dataout = 0x00;
@@ -556,7 +581,8 @@ namespace rdnodude
                                         }
                                         if (ncnt > 0 && ncnt < 4)
                                         {   // if line has less than 4 bytes
-                                            user_flash_read_compare(addr, dataout, ncnt);
+                                            result = user_flash_read_compare(addr, dataout, ncnt);
+                                            if (result.flag == true) iErrCnt++;
                                         }
                                     }
 
@@ -580,6 +606,10 @@ namespace rdnodude
                             if (nbytes > 0)
                             {
                                 total_bytes += nbytes;
+                            }
+                            if (iErrCnt > 0)
+                            {
+                                Console.WriteLine("ERROR: Total Read compare failure {0} detected \n", iErrCnt);
                             }
 
                             file.Close();
@@ -605,7 +635,7 @@ namespace rdnodude
             s_result result = new s_result();
             result.flag = false;
 
-            Console.WriteLine("runodude (Rev:0.3)- A Riscduino firmware downloading application");
+            Console.WriteLine("runodude (Rev:0.6)- A Riscduino firmware downloading application");
 
             if (args.Length == 3)
             {
@@ -643,10 +673,10 @@ namespace rdnodude
             result = uartm_rm_cmd(0x30020000); //  # User Chip ID
             Console.WriteLine("Riscduino Chip ID:0x{0:x8} ", result.value);
             user_flash_device_id();
-            user_flash_quad_mode(); // Enable Quad Mode
             user_flash_chip_erase();
             user_flash_progam(HexFile,true);
             user_flash_verify(HexFile);
+            user_risc_wakeup();
 
 
 
