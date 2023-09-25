@@ -1,29 +1,32 @@
 # riscduino_tool
 Repository for storing Arduino related tool files. This directory used along with https://github.com/dineshannayya/riscduino_board/
 
-# Setup #
+# Youtube Video on Arduino IDE integration #
+*  https://www.youtube.com/watch?v=7_vQJfD9OVo
 
-## Install Arduino ##
+# Manual Setup #
 
-Download and install [Arduino IDE 2.0 tarball] (https://www.arduino.cc/en/software#experimental-software) from the Arduino website. Unpack it and run their installation script as directed.
+## Install Arduino IDE ##
 
-## Install the Riscduino Boards ##
+Download and install [Arduino IDE 2.2.1](https://www.arduino.cc/en/software#experimental-software) from the Arduino website. Unpack it and run their installation script as directed.
 
-### Installing Through the Arduino IDE ###
+## Installation of the Riscduino Boards Package in Arduino IDE ##
 
-This is supported for Windows and Linux.
+### Installing Through Arduino IDE ###
 
-1. Open the arduino-ide
+This is supported for __Windows__ and __Linux__.
 
-2. Go to [File] [Preference]
+1. Open the Arduino-IDE.
+
+2. Go to [File] [Preferences].
 <table>
   <tr>
     <td  align="center"><img src="./docs/source/_static/Riscdunio-board-install-0.png" ></td>
   </tr>
 </table>
 
-3. Click on <Additional Board Manager URL>
-   Add the [https://github.com/dineshannayya/riscduino_tools/raw/main/package_riscduino_index.json](https://github.com/dineshannayya/riscduino_tools/raw/main/package_riscduino_index.json)  
+3. Click on __Additional boards manager URLs__ and 
+   Add the following link [https://github.com/dineshannayya/riscduino_tools/raw/main/package_riscduino_index.json](https://github.com/dineshannayya/riscduino_tools/raw/main/package_riscduino_index.json).  
 <table>
   <tr>
     <td  align="center"><img src="./docs/source/_static/Riscduino-board-install-1.png" ></td>
@@ -31,22 +34,23 @@ This is supported for Windows and Linux.
   </tr>
 </table>
 
-4. Go to [Tools][Board][Board Manager] Search for riscduion under board manager
+4. Go to [Tools][Board][Board Manager] and Search for Riscduino Boards.
 <table>
   <tr>
     <td  align="center"><img src="./docs/source/_static/Riscduino-board-install-3.png" ></td>
   </tr>
 </table>
 
-5. Install the latest Riscduino
+5. Install the latest version of Riscduino Boards.
 <table>
   <tr>
     <td  align="center"><img src="./docs/source/_static/Riscduino-board-install-4.png" ></td>
   </tr>
 </table>
 
-6.  Select Your Board #
-    Tools->Board-> Riscduino
+6. Select Your Board and Port <br>
+    Tools --> Board --> Riscduino Uno <br>
+    Tools --> Port --> the Port in use.
  
 <table>
   <tr>
@@ -54,6 +58,7 @@ This is supported for Windows and Linux.
   </tr>
 </table>
 
+7. Now you should be able to compile and upload code onto the Riscduino Board.
 
 # Command Reference
 
