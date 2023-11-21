@@ -12,7 +12,7 @@
 		{
 		    "category": "Riscduino",
 		    "name": "Riscduino Boards",
-		    "version": "1.3.2",
+		    "version": "1.3.3",
 		    "url": "https://github.com/dineshannayya/riscduino_tools/raw/main/riscduino_firmware-1.3.2.tar.gz",
 		    "checksum": "SHA-256:6782ffcf4a458d721f1715db8d82456a672157c02935cbba94e07c45a039bd5d",
 	        "archiveFileName": "riscduino_firmware-1.3.2.tar.gz",
@@ -22,11 +22,6 @@
 			{"name": "Riscduino Uno"}
 		    ], 
 		    "toolsDependencies": [
-			{
-			    "packager": "riscduino",
-			    "version": "1.0.2",
-			    "name": "riscv64-unknown-elf-gcc"
-			},
 			{
 			    "packager": "riscduino",
 			    "version": "1.0.2",
@@ -43,7 +38,7 @@
 	    "tools": [
 		{
 		    "version": "1.0.2",
-		    "name": "riscv64-unknown-elf-gcc",
+		    "name": "riscv32-unknown-elf-gcc",
 		    "systems": [
 			{
 			    "url": "https://github.com/dineshannayya/riscduino_tools/raw/main/riscv64-unknown-elf-toolchain-10.1.0-2020.06.24-x86_64-w64-mingw32.zip",
@@ -51,13 +46,7 @@
 			    "host": "i686-mingw32",
 			    "archiveFileName": "riscv64-unknown-elf-toolchain-10.1.0-2020.06.24-x86_64-w64-mingw32.zip",
 			    "size": "86905749"
-			}
-		    ]
-		},
-		{
-		    "version": "1.0.2",
-		    "name": "riscv32-unknown-elf-gcc",
-		    "systems": [
+			},
 			{
 			    "url": "https://github.com/dineshannayya/riscduino_tools/raw/main/riscv32-unknown-elf.6.1.0.tar.gz",
 			    "checksum": "SHA-256:ee3650dc4047beda9732a61982666ff39b703d033c311b2982164491c52e5229",
