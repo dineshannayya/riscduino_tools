@@ -12,11 +12,11 @@
 		{
 		    "category": "Riscduino",
 		    "name": "Riscduino Boards",
-		    "version": "1.3.3",
-		    "url": "https://github.com/dineshannayya/riscduino_tools/raw/main/riscduino_firmware-1.3.2.tar.gz",
-		    "checksum": "SHA-256:6782ffcf4a458d721f1715db8d82456a672157c02935cbba94e07c45a039bd5d",
-	        "archiveFileName": "riscduino_firmware-1.3.2.tar.gz",
-		    "size": "1040516",
+		    "version": "1.3.4",
+		    "url": "https://github.com/dineshannayya/riscduino_tools/raw/main/riscduino_firmware-1.3.4.tar.gz",
+		    "checksum": "SHA-256:9137bdb50627d4460869185f103bfe3b530dca6e786295d95ee377392ce14036",
+	        "archiveFileName": "riscduino_firmware-1.3.4.tar.gz",
+		    "size": "1040423",
 		    "architecture": "riscv",
 		    "boards": [
 			{"name": "Riscduino Uno"}
