@@ -12,7 +12,7 @@
 		{
 		    "category": "Riscduino",
 		    "name": "Riscduino Boards",
-		    "version": "1.3.4",
+		    "version": "1.3.5",
 		    "url": "https://github.com/dineshannayya/riscduino_tools/raw/main/riscduino_firmware-1.3.4.tar.gz",
 		    "checksum": "SHA-256:9137bdb50627d4460869185f103bfe3b530dca6e786295d95ee377392ce14036",
 	        "archiveFileName": "riscduino_firmware-1.3.4.tar.gz",
@@ -24,7 +24,7 @@
 		    "toolsDependencies": [
 			{
 			    "packager": "riscduino",
-			    "version": "1.0.2",
+			    "version": "1.0.3",
 			    "name": "riscv32-unknown-elf-gcc"
 			},
 			{
@@ -37,7 +37,7 @@
 	    ],
 	    "tools": [
 		{
-		    "version": "1.0.2",
+		    "version": "1.0.3",
 		    "name": "riscv32-unknown-elf-gcc",
 		    "systems": [
 			{
@@ -49,10 +49,10 @@
 			},
 			{
 			    "url": "https://github.com/dineshannayya/riscduino_tools/raw/main/riscv32-unknown-elf.6.1.0.tar.gz",
-			    "checksum": "SHA-256:ee3650dc4047beda9732a61982666ff39b703d033c311b2982164491c52e5229",
+			    "checksum": "SHA-256:60c00a122db048e5e604da0b06c711757f211fcffded9cf1e2ee98200278b1cd",
 			    "host": "x86_64-pc-linux-gnu",
 			    "archiveFileName": "riscv32-unknown-elf.6.1.0.tar.gz",
-			    "size": "72372573"
+			    "size": "72355749"
 			}
 
 		    ]
