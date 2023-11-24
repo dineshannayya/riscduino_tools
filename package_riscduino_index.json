@@ -12,7 +12,7 @@
 		{
 		    "category": "Riscduino",
 		    "name": "Riscduino Boards",
-		    "version": "1.3.8",
+		    "version": "1.3.9",
 		    "url": "https://github.com/dineshannayya/riscduino_tools/raw/main/riscduino_firmware-1.3.8.tar.gz",
 		    "checksum": "SHA-256:549efb9a7c8b0a8ae758047e3dfb9d9773f25b492cd86a59802201991b8cba0a",
 	        "archiveFileName": "riscduino_firmware-1.3.8.tar.gz",
@@ -24,7 +24,7 @@
 		    "toolsDependencies": [
 			{
 			    "packager": "riscduino",
-			    "version": "1.0.3",
+			    "version": "1.0.4",
 			    "name": "riscv32-unknown-elf-gcc"
 			},
 			{
@@ -37,21 +37,21 @@
 	    ],
 	    "tools": [
 		{
-		    "version": "1.0.3",
+		    "version": "1.0.4",
 		    "name": "riscv32-unknown-elf-gcc",
 		    "systems": [
 			{
-			    "url": "https://github.com/dineshannayya/riscduino_tools/raw/main/riscv64-unknown-elf-toolchain-10.1.0-2020.06.24-x86_64-w64-mingw32.zip",
-			    "checksum": "SHA-256:524b272dbe5d1fbbdcd03facea4f954dbdd17affd426bedf2364a03499ad62fb",
+			    "url": "https://github.com/dineshannayya/riscduino_tools/raw/main/riscv32-unknown-elf.13.2.0-x86_64-w32-mingw32.tar.gz",
+			    "checksum": "SHA-256:5e6b1799b4e0fe9961e8bb59f91f6d43fcbec0db70757da9db790534271c0fdf",
 			    "host": "i686-mingw32",
-			    "archiveFileName": "riscv64-unknown-elf-toolchain-10.1.0-2020.06.24-x86_64-w64-mingw32.zip",
-			    "size": "86905749"
+			    "archiveFileName": "riscv32-unknown-elf.13.2.0-x86_64-w32-mingw32.tar.gz",
+			    "size": "64544371"
 			},
 			{
-			    "url": "https://github.com/dineshannayya/riscduino_tools/raw/main/riscv32-unknown-elf.6.1.0.tar.gz",
+			    "url": "https://github.com/dineshannayya/riscduino_tools/raw/main/riscv32-unknown-elf.6.1.0-x86_64-i686-pc-linux-gnu.tar.gz",
 			    "checksum": "SHA-256:60c00a122db048e5e604da0b06c711757f211fcffded9cf1e2ee98200278b1cd",
 			    "host": "x86_64-pc-linux-gnu",
-			    "archiveFileName": "riscv32-unknown-elf.6.1.0.tar.gz",
+			    "archiveFileName": "riscv32-unknown-elf.6.1.0-x86_64-i686-pc-linux-gnu.tar.gz",
 			    "size": "72355749"
 			}
 
