@@ -42,10 +42,10 @@
 		    "systems": [
 			{
 			    "url": "https://github.com/dineshannayya/riscduino_tools/raw/main/riscv32-unknown-elf.13.2.0-x86_64-w32-mingw32.tar.gz",
-			    "checksum": "SHA-256:5e6b1799b4e0fe9961e8bb59f91f6d43fcbec0db70757da9db790534271c0fdf",
+			    "checksum": "SHA-256:1b26acbb603df5a3925cd64ed103ef4969ce1edca61c2710741318273d959d82",
 			    "host": "i686-mingw32",
 			    "archiveFileName": "riscv32-unknown-elf.13.2.0-x86_64-w32-mingw32.tar.gz",
-			    "size": "64544371"
+			    "size": "53831946"
 			},
 			{
 			    "url": "https://github.com/dineshannayya/riscduino_tools/raw/main/riscv32-unknown-elf.6.1.0-x86_64-i686-pc-linux-gnu.tar.gz",
