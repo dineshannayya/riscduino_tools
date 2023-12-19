@@ -38,7 +38,10 @@
 ////    0.6 - 6 Sept 2023, Dinesh A                                                              ////
 ////          Auto Wakeup feature enabled                                                        ////
 ////    0.7 - 19 Dec 2023, Dinesh A                                                              ////
-////          Enabled additional chip-id check to handle CI2306Q                                 ////
+////     A. Enabled additional chip-id check to handle CI2306Q                                   ////
+////    0.71 - 19 Dec 2023, Dinesh A                                                             ////
+////     A.  changed the uart and caravel flash handshake bit at address 0x30080000 is changed   ////
+////           from bit[31] to [15] - Note: in 2306 chip bit[31] is tied to zero                 ////
 /////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #include <fcntl.h>
@@ -280,8 +283,8 @@ struct s_result uartm_write_response(int fd,unsigned int  addr, unsigned int  da
 //#############################################
 void user_reboot(int fd) {
     printf("Reseting up User Risc Core\n");
-    uartm_wm_cmd(fd,0x30080000,0x80000000,1); // Set Bit[31] = 1 to indicate user flashing to caravel
-    uartm_wm_cmd(fd,0x30080000,0x80000001,1);
+    uartm_wm_cmd(fd,0x30080000,0x00008000,1); // Set Bit[15] = 1 to indicate user flashing to caravel
+    uartm_wm_cmd(fd,0x30080000,0x00008001,1);
     bank_addr = 0x00001000;
     uartm_wm_cmd(fd,0x30080004,bank_addr,1);
     uartm_wm_cmd(fd,0x30020004,0x0000001F,1);
@@ -824,7 +827,7 @@ int main(int argc, char *argv[] )
 int  _serialPort;
 struct s_result result;
 
-  printf("runodude (Rev:0.7)- A Riscduino firmware downloading application");
+  printf("runodude (Rev:0.71)- A Riscduino firmware downloading application");
   if( argc != 4 ) {
       //printf("Total Argument Received : %d \n",argc);
       printf("Format: %s <COM> <BaudRate> <Hex File>  \n", argv[0]);

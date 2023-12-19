@@ -12,7 +12,7 @@
 		{
 		    "category": "Riscduino",
 		    "name": "Riscduino Boards",
-		    "version": "1.4.1",
+		    "version": "1.4.2",
 		    "url": "https://github.com/dineshannayya/riscduino_tools/raw/main/riscduino_firmware-1.4.0.tar.gz",
 		    "checksum": "SHA-256:752331845d289d65e8ba6f262ada085da00c94def4ae02f7628fcfaac42a2c21",
 	        "archiveFileName": "riscduino_firmware-1.4.0.tar.gz",
@@ -29,7 +29,7 @@
 			},
 			{
 			    "packager": "riscduino",
-			    "version": "0.0.7",
+			    "version": "0.0.71",
 			    "name": "rdnodude"
 			}
 		    ]
@@ -59,7 +59,7 @@
 		},
 
 		{
-		    "version": "0.0.7",
+		    "version": "0.0.71",
 		    "name": "rdnodude",
 		    "systems": [
 			{
@@ -70,11 +70,11 @@
 			    "size": "5701"
 			},
 			{
-			    "url": "https://github.com/dineshannayya/riscduino_tools/raw/main/rdnodude-0.0.7-2023.12.19-x86_64-i686-pc-linux-gnu.tar.gz",
-			    "checksum": "SHA-256:e6eaf817b9f4e452073d3c89d6e891e678a254cbdc569cdb3fa99a10649f4d77",
+			    "url": "https://github.com/dineshannayya/riscduino_tools/raw/main/rdnodude-0.0.71-2023.12.19-x86_64-i686-pc-linux-gnu.tar.gz",
+			    "checksum": "SHA-256:139a2a1a6548b18c6e6df2e7a570e88ba955840d5d4ee8e4cede68db52c5ff3c",
 			    "host": "x86_64-pc-linux-gnu",
-			    "archiveFileName": "rdnodude-0.0.7-2023.12.19-x86_64-i686-pc-linux-gnu.tar.gz",
-			    "size": "8456"
+			    "archiveFileName": "rdnodude-0.0.71-2023.12.19-x86_64-i686-pc-linux-gnu.tar.gz",
+			    "size": "8463"
 			}
 
 		    ]
