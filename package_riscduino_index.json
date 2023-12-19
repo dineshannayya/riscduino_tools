@@ -29,7 +29,7 @@
 			},
 			{
 			    "packager": "riscduino",
-			    "version": "0.0.6",
+			    "version": "0.0.7",
 			    "name": "rdnodude"
 			}
 		    ]
@@ -59,7 +59,7 @@
 		},
 
 		{
-		    "version": "0.0.6",
+		    "version": "0.0.7",
 		    "name": "rdnodude",
 		    "systems": [
 			{
@@ -70,11 +70,11 @@
 			    "size": "5701"
 			},
 			{
-			    "url": "https://github.com/dineshannayya/riscduino_tools/raw/main/rdnodude-0.0.6-2023.09.07-x86_64-i686-pc-linux-gnu.tar.gz",
-			    "checksum": "SHA-256:1af11c30437819c0948ed54c35323e441d6148af510e15a1bfa24b06c5c8601b",
+			    "url": "https://github.com/dineshannayya/riscduino_tools/raw/main/rdnodude-0.0.7-2023.12.19-x86_64-i686-pc-linux-gnu.tar.gz",
+			    "checksum": "SHA-256:e6eaf817b9f4e452073d3c89d6e891e678a254cbdc569cdb3fa99a10649f4d77",
 			    "host": "x86_64-pc-linux-gnu",
-			    "archiveFileName": "rdnodude-0.0.6-2023.09.07-x86_64-i686-pc-linux-gnu.tar.gz",
-			    "size": "8082"
+			    "archiveFileName": "rdnodude-0.0.7-2023.12.19-x86_64-i686-pc-linux-gnu.tar.gz",
+			    "size": "8456"
 			}
 
 		    ]
