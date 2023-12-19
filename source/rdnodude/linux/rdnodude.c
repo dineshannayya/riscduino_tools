@@ -36,7 +36,9 @@
 ////    0.5 - 4 Sept 2023, Dinesh A                                                              ////
 ////          Memory Write/Read to to SRAM Location (0x08xx_xxxx) support added                  ////
 ////    0.6 - 6 Sept 2023, Dinesh A                                                              ////
-////          Auto Wakeup feature enabled
+////          Auto Wakeup feature enabled                                                        ////
+////    0.7 - 19 Dec 2023, Dinesh A                                                              ////
+////          Enabled additional chip-id check to handle CI2306Q                                 ////
 /////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #include <fcntl.h>
@@ -456,19 +458,66 @@ void user_chip_id(int fd)
     struct s_result result;
     result.flag = 0;
 
+       
+    // Bit [11:8] mapping: Chip ID
+    //    0 -  YIFIVE (MPW-2)
+    //    1 -  Riscdunio (MPW-3)
+    //    2 -  Riscdunio (MPW-4)
+    //    3 -  Riscdunio (MPW-5)
+    //    4 -  Riscdunio (MPW-6)
+    //    5 -  Riscdunio (MPW-7)
+    //    6 -  Riscdunio (MPW-8)
+    //    7 -  Riscdunio (MPW-9)
+    //  
     result = uartm_rm_cmd(fd,0x30020000);
-    if (result.value == 0x82682501)
-    {
-        printf("Riscduino Chip ID => 0x%08x [GOOD]\n", result.value);
+    if (result.value == 0x82681501) {
+        printf("Riscduino-SCore MPW-7 Equivalent Chip => 0x%08x [GOOD]\n", result.value);
         result.flag = 1;
-    }
-    else
-    {
-        printf("Riscduino Chip ID => %d [BAD]\n", result.value);
+    }else if (result.value == 0x81681601) {
+        printf("Riscduino-Score MPW-8 Equivalent Chip => 0x%08x [GOOD]\n", result.value);
+        result.flag = 1;
+    }else if (result.value == 0x81681701) {
+        printf("Riscduino-Score MPW-9 Equivalent Chip => 0x%08x [GOOD]\n", result.value);
+        result.flag = 1;
+    }else if (result.value == 0x82682501) {
+        printf("Riscduino-DCore MPW-7 Equivalent Chip => 0x%08x [GOOD]\n", result.value);
+        result.flag = 1;
+    }else if (result.value == 0x82682601) {
+        printf("Riscduino-Dcore MPW-8 Equivalent Chip => 0x%08x [GOOD]\n", result.value);
+        result.flag = 1;
+    }else if (result.value == 0x82682701) {
+        printf("Riscduino-Dcore MPW-9 Equivalent Chip => 0x%08x [GOOD]\n", result.value);
+        result.flag = 1;
+    } else if (result.value == 0x82684501) {
+        printf("Riscduino-QCore MPW-7 Equivalent Chip => 0x%08x [GOOD]\n", result.value);
+        result.flag = 1;
+    }else if (result.value == 0x81684601) {
+        printf("Riscduino-Qcore MPW-8 Equivalent Chip => 0x%08x [GOOD]\n", result.value);
+        result.flag = 1;
+    }else if (result.value == 0x81684701) {
+        printf("Riscduino-Qcore MPW-9 Equivalent Chip => 0x%08x [GOOD]\n", result.value);
+        result.flag = 1;
+    } else {
+        printf("Riscduino Chip ID => 0x%08x [BAD]\n", result.value);
         exit(0);
     }
 }
 
+//#############################################
+//#  Display the riscdduino signature
+//#############################################
+void riscduino_signature(int fd){
+    struct s_result result;
+    uartm_wm_cmd(fd,0x30080004,0x00001000,1);
+    result = uartm_rm_cmd(fd,0x30020000);
+    printf("Riscduino Chip ID => 0x%08x \n", result.value);
+    result = uartm_rm_cmd(fd,0x30020040);
+    printf("Riscduino Signature => 0x%08x \n", result.value);
+    result = uartm_rm_cmd(fd,0x30020044);
+    printf("Riscduino Release Date => 0x%08x \n", result.value);
+    result = uartm_rm_cmd(fd,0x30020048);
+    printf("Riscduino Version => 0x%08x \n", result.value);
+}
 //#############################################
 //#  Sector Erase Command            
 //#############################################
@@ -775,7 +824,7 @@ int main(int argc, char *argv[] )
 int  _serialPort;
 struct s_result result;
 
-  printf("runodude (Rev:0.6)- A Riscduino firmware downloading application");
+  printf("runodude (Rev:0.7)- A Riscduino firmware downloading application");
   if( argc != 4 ) {
       //printf("Total Argument Received : %d \n",argc);
       printf("Format: %s <COM> <BaudRate> <Hex File>  \n", argv[0]);
@@ -800,6 +849,7 @@ struct s_result result;
   
   user_flash_progam(_serialPort,filename);
   user_flash_verify(_serialPort,filename);
+  riscduino_signature(_serialPort);
   user_wakeup(_serialPort);
  
   close(_serialPort);
