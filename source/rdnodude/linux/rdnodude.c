@@ -42,6 +42,8 @@
 ////    0.71 - 19 Dec 2023, Dinesh A                                                             ////
 ////     A.  changed the uart and caravel flash handshake bit at address 0x30080000 is changed   ////
 ////           from bit[31] to [15] - Note: in 2306 chip bit[31] is tied to zero                 ////
+////    0.72 - 19 Dec 2023, Dinesh A                                                             ////
+////         icache/dcache enable/disable display added                                          ////
 /////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #include <fcntl.h>
@@ -513,13 +515,20 @@ void riscduino_signature(int fd){
     struct s_result result;
     uartm_wm_cmd(fd,0x30080004,0x00001000,1);
     result = uartm_rm_cmd(fd,0x30020000);
-    printf("Riscduino Chip ID => 0x%08x \n", result.value);
+    printf("Riscduino Chip ID      :: 0x%08x \n", result.value);
     result = uartm_rm_cmd(fd,0x30020040);
-    printf("Riscduino Signature => 0x%08x \n", result.value);
+    printf("Riscduino Signature    :: 0x%08x \n", result.value);
     result = uartm_rm_cmd(fd,0x30020044);
-    printf("Riscduino Release Date => 0x%08x \n", result.value);
+    printf("Riscduino Release Date :: 0x%08x \n", result.value);
     result = uartm_rm_cmd(fd,0x30020048);
-    printf("Riscduino Version => 0x%08x \n", result.value);
+    printf("Riscduino Version      :: 0x%08x \n", result.value);
+    
+    result = uartm_rm_cmd(fd,0x30020008);
+    if(result.value & 0x04000000) printf("Riscduino icache       ::  Disabled\n");
+    else  printf("Riscduino icache       ::  Enabled\n");
+    if(result.value & 0x08000000) printf("Riscduino dcache       ::  Disabled\n");
+    else  printf("Riscduino dcache       ::  Enabled\n");
+
 }
 //#############################################
 //#  Sector Erase Command            
@@ -827,7 +836,7 @@ int main(int argc, char *argv[] )
 int  _serialPort;
 struct s_result result;
 
-  printf("runodude (Rev:0.71)- A Riscduino firmware downloading application");
+  printf("runodude (Rev:0.72)- A Riscduino firmware downloading application");
   if( argc != 4 ) {
       //printf("Total Argument Received : %d \n",argc);
       printf("Format: %s <COM> <BaudRate> <Hex File>  \n", argv[0]);
