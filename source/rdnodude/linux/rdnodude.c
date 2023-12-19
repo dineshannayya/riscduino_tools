@@ -44,6 +44,8 @@
 ////           from bit[31] to [15] - Note: in 2306 chip bit[31] is tied to zero                 ////
 ////    0.72 - 19 Dec 2023, Dinesh A                                                             ////
 ////         icache/dcache enable/disable display added                                          ////
+////    0.8 - 19 Dec 2023, Dinesh A                                                             ////
+////         updated boot-up sequence with riscv-control reg value                               ////
 /////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #include <fcntl.h>
@@ -284,11 +286,18 @@ struct s_result uartm_write_response(int fd,unsigned int  addr, unsigned int  da
 //#  User Reboot Command
 //#############################################
 void user_reboot(int fd) {
+    struct s_result risc_ctrl;
+    bank_addr = 0x00001000;
+    uartm_wm_cmd(fd,0x30080004,bank_addr,1);
+
+    // copy the risc control config, as this will get
+    risc_ctrl = uartm_rm_cmd(fd,0x30020008);
+
     printf("Reseting up User Risc Core\n");
     uartm_wm_cmd(fd,0x30080000,0x00008000,1); // Set Bit[15] = 1 to indicate user flashing to caravel
     uartm_wm_cmd(fd,0x30080000,0x00008001,1);
-    bank_addr = 0x00001000;
-    uartm_wm_cmd(fd,0x30080004,bank_addr,1);
+
+    uartm_wm_cmd(fd,0x30020008,risc_ctrl.value,1); // copy back the risc control
     uartm_wm_cmd(fd,0x30020004,0x0000001F,1);
      // Setting Serial Flash to Quad Mode
      uartm_wm_cmd(fd,0x30000004, 0x619800EB,1);
@@ -301,11 +310,16 @@ void user_reboot(int fd) {
 //#  User Wakeup Command
 //#############################################
 void user_wakeup(int fd) {
+    struct s_result risc_ctrl;
     printf("Waking up r Risc Core\n");
     bank_addr = 0x00001000;
     uartm_wm_cmd(fd,0x30080004,bank_addr,1);
+    // copy the risc control config, as this will get
+    risc_ctrl = uartm_rm_cmd(fd,0x30020008);
+
 	uartm_wm_cmd(fd,0x30080000, 0x00000000, 1); 
     uartm_wm_cmd(fd,0x30080000, 0x00000001, 1);
+    uartm_wm_cmd(fd,0x30020008,risc_ctrl.value,1); // copy back the risc control
     uartm_wm_cmd(fd,0x30020004, 0x0000001F, 1);
     // Setting Serial Flash to Quad Mode
     uartm_wm_cmd(fd,0x30000004, 0x619800EB, 1);
@@ -524,6 +538,7 @@ void riscduino_signature(int fd){
     printf("Riscduino Version      :: 0x%08x \n", result.value);
     
     result = uartm_rm_cmd(fd,0x30020008);
+    printf("Riscduino Cache Ctrl   :: 0x%08x \n", result.value);
     if(result.value & 0x04000000) printf("Riscduino icache       ::  Disabled\n");
     else  printf("Riscduino icache       ::  Enabled\n");
     if(result.value & 0x08000000) printf("Riscduino dcache       ::  Disabled\n");
@@ -836,7 +851,7 @@ int main(int argc, char *argv[] )
 int  _serialPort;
 struct s_result result;
 
-  printf("runodude (Rev:0.72)- A Riscduino firmware downloading application");
+  printf("runodude (Rev:0.8)- A Riscduino firmware downloading application");
   if( argc != 4 ) {
       //printf("Total Argument Received : %d \n",argc);
       printf("Format: %s <COM> <BaudRate> <Hex File>  \n", argv[0]);
