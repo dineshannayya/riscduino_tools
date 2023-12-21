@@ -294,8 +294,10 @@ void user_reboot(int fd) {
     risc_ctrl = uartm_rm_cmd(fd,0x30020008);
 
     printf("Reseting up User Risc Core\n");
-    uartm_wm_cmd(fd,0x30080000,0x00008000,1); // Set Bit[15] = 1 to indicate user flashing to caravel
-    uartm_wm_cmd(fd,0x30080000,0x00008001,1);
+    // From CI2306 Onwards Set Bit[15] = 1 to indicate user flashing in progress to to caravel Riscv core.
+    // In CI2206Q, Bit[31] used  to 
+    uartm_wm_cmd(fd,0x30080000,0x80008000,1); 
+    uartm_wm_cmd(fd,0x30080000,0x80008001,1);
 
     uartm_wm_cmd(fd,0x30020008,risc_ctrl.value,1); // copy back the risc control
     uartm_wm_cmd(fd,0x30020004,0x0000001F,1);

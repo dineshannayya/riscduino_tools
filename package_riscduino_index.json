@@ -71,10 +71,10 @@
 			},
 			{
 			    "url": "https://github.com/dineshannayya/riscduino_tools/raw/main/rdnodude-0.0.8-2023.12.19-x86_64-i686-pc-linux-gnu.tar.gz",
-			    "checksum": "SHA-256:230242d1dd0e38cda937a0332434a9c0f2b92d7df1d9af25d55c98b40406943b",
+			    "checksum": "SHA-256:8fae5e6aeac95f9a9a6bb631c5ee0155ec29f69820a9414ff4d666f2cc219e59",
 			    "host": "x86_64-pc-linux-gnu",
 			    "archiveFileName": "rdnodude-0.0.8-2023.12.19-x86_64-i686-pc-linux-gnu.tar.gz",
-			    "size": "8578"
+			    "size": "8579"
 			}
 
 		    ]
