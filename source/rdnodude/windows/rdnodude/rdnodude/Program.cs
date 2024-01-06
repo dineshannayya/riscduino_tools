@@ -41,8 +41,16 @@
 ////          A. Bank Switch Supported for Address Crossing 0xFFFF                               ////
 ////          B. Flash Sector Erase function changed Chip Erase                                  ////
 ////    0.6 - 6 Sept 2023, Dinesh A                                                              ////
-////          Auto Wakeup feature enabled
-
+////          Auto Wakeup feature enabled                                                        ////
+////    0.7 - 19 Dec 2023, Dinesh A                                                              ////
+////     A. Enabled additional chip-id check to handle CI2306Q                                   ////
+////    0.71 - 19 Dec 2023, Dinesh A                                                             ////
+////     A.  changed the uart and caravel flash handshake bit at address 0x30080000 is changed   ////
+////           from bit[31] to [15] - Note: in 2306 chip bit[31] is tied to zero                 ////
+////    0.72 - 19 Dec 2023, Dinesh A                                                             ////
+////         icache/dcache enable/disable display added                                          ////
+////    0.8 - 19 Dec 2023, Dinesh A                                                              ////
+////         updated boot-up sequence with riscv-control reg value                               ////
 /////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -254,12 +262,12 @@ namespace rdnodude
             Console.WriteLine("SPI Flash Device ID:0x{0:x8} ", result.value);
             if (result.value != 0x001640ef)
             {
-                Console.WriteLine("ERROR: Invalid SPI Flash Device ID: {0} detected:", result.value);
+                Console.WriteLine("ERROR: Invalid SPI Flash Device ID: 0x{0} detected:", result.value);
                 Environment.Exit(0);
             }
             else
             {
-                Console.WriteLine("STATUS: Valid SPI Flash Device ID: {0} detected:", result.value);
+                Console.WriteLine("STATUS: Valid SPI Flash Device ID: 0x{0} detected:", result.value);
 
             }
         }
@@ -375,11 +383,21 @@ namespace rdnodude
         //#  User Reboot Command
         //#############################################
             static void user_reboot() {
-                    Console.WriteLine("Reseting up User Risc Core");
-                    uartm_wm_cmd(0x30080000,0x80000000,true); // Set Bit[31] = 1 to indicate user flashing to caravel
-                    uartm_wm_cmd(0x30080000,0x80000001,true);
+                    s_result risc_ctrl = new s_result();
+
                     bank_addr = 0x00001000;
                     uartm_wm_cmd(0x30080004, bank_addr, true);
+                    // copy the risc control config, as this will get configured by caravel based on chip
+                    risc_ctrl = uartm_rm_cmd(0x30020008);
+
+                    Console.WriteLine("Reseting up User Risc Core");
+                    // From CI2306 Onwards Set Bit[15] = 1 to indicate user flashing in progress to  caravel Riscv core.
+                    // In CI2206Q, Bit[31] used  to indicate user flashing in progress to  caravel Riscv core.
+                    uartm_wm_cmd(0x30080000,0x80008000,true); 
+                    uartm_wm_cmd(0x30080000,0x80008001,true);
+
+                    // copy back the risc control
+                    uartm_wm_cmd(0x30020008, risc_ctrl.value, true); 
                     uartm_wm_cmd(0x30020004,0x0000001F,true);
                     // Setting Serial Flash to Quad Mode
                     uartm_wm_cmd(0x30000004, 0x619800EB, true);
@@ -392,11 +410,17 @@ namespace rdnodude
             //# User Risc Wake up
             //########################################
             static void user_risc_wakeup() {
+                s_result risc_ctrl = new s_result();
+
                 Console.WriteLine("Waking up User Risc Core");
                 bank_addr = 0x00001000;
                 uartm_wm_cmd(0x30080004, bank_addr, true);
+                // copy the risc control config, as this will get configured by caravel based on chip
+                risc_ctrl = uartm_rm_cmd(0x30020008);
+
                 uartm_wm_cmd(0x30080000, 0x00000000, true); 
                 uartm_wm_cmd(0x30080000, 0x00000001, true);
+                uartm_wm_cmd(0x30020008, risc_ctrl.value, true); // copy back the risc control
                 uartm_wm_cmd(0x30020004, 0x0000001F, true);
                 // Setting Serial Flash to Quad Mode
                 uartm_wm_cmd(0x30000004, 0x619800EB, true);
@@ -408,6 +432,81 @@ namespace rdnodude
 
             }
 
+
+        //---------------------------------
+// Reading Riscduino Chip ID
+//---------------------------------
+static void user_chip_id()  {
+    s_result result = new s_result();
+
+    // Bit [11:8] mapping: Chip ID
+    //    0 -  YIFIVE (MPW-2)
+    //    1 -  Riscdunio (MPW-3)
+    //    2 -  Riscdunio (MPW-4)
+    //    3 -  Riscdunio (MPW-5)
+    //    4 -  Riscdunio (MPW-6)
+    //    5 -  Riscdunio (MPW-7)
+    //    6 -  Riscdunio (MPW-8)
+    //    7 -  Riscdunio (MPW-9)
+    //  
+    result = uartm_rm_cmd(0x30020000);
+    if (result.value == 0x82681501) {
+        Console.WriteLine("Riscduino-SCore MPW-7 Equivalent Chip => 0x{0:x8} [GOOD]", result.value);
+        result.flag = true;
+    }else if (result.value == 0x81681601) {
+        Console.WriteLine("Riscduino-SCore MPW-8 Equivalent Chip => 0x{0:x8} [GOOD]", result.value);
+        result.flag = true;
+    }else if (result.value == 0x81681701) {
+        Console.WriteLine("Riscduino-SCore MPW-9 Equivalent Chip => 0x{0:x8} [GOOD]", result.value);
+        result.flag = true;
+    }else if (result.value == 0x82682501) {
+        Console.WriteLine("Riscduino-DCore MPW-7 Equivalent Chip => 0x{0:x8} [GOOD]", result.value);
+        result.flag = true;
+    }else if (result.value == 0x82682601) {
+        Console.WriteLine("Riscduino-DCore MPW-8 Equivalent Chip => 0x{0:x8} [GOOD]", result.value);
+        result.flag = true;
+    }else if (result.value == 0x82682701) {
+        Console.WriteLine("Riscduino-DCore MPW-9 Equivalent Chip => 0x{0:x8} [GOOD]", result.value);
+        result.flag = true;
+    } else if (result.value == 0x82684501) {
+        Console.WriteLine("Riscduino-QCore MPW-7 Equivalent Chip => 0x{0:x8} [GOOD]", result.value);
+        result.flag = true;
+    }else if (result.value == 0x81684601) {
+        Console.WriteLine("Riscduino-QCore MPW-8 Equivalent Chip => 0x{0:x8} [GOOD]", result.value);
+        result.flag = true;
+    }else if (result.value == 0x81684701) {
+        Console.WriteLine("Riscduino-QCore MPW-9 Equivalent Chip => 0x{0:x8} [GOOD]", result.value);
+        result.flag = true;
+    } else {
+        Console.WriteLine("Riscduino Chip ID => 0x{0:x8} [GOOD]", result.value);
+        Environment.Exit(0);
+    }
+}
+
+//#############################################
+//#  Display the riscdduino signature
+//#############################################
+static void riscduino_signature()
+{
+    s_result result = new s_result();
+    uartm_wm_cmd(0x30080004, 0x00001000, true);
+    result = uartm_rm_cmd(0x30020000);
+    Console.WriteLine("Riscduino Chip ID      :: 0x{0:x8}", result.value);
+    result = uartm_rm_cmd(0x30020040);
+    Console.WriteLine("Riscduino Signature    :: 0x{0:x8}", result.value);
+    result = uartm_rm_cmd(0x30020044);
+    Console.WriteLine("Riscduino Release Date :: 0x{0:x8}", result.value);
+    result = uartm_rm_cmd(0x30020048);
+    Console.WriteLine("Riscduino Version      :: 0x{0:x8}", result.value);
+    
+    result = uartm_rm_cmd(0x30020008);
+    Console.WriteLine("Riscduino Cache Ctrl   :: 0x{0:x8} ", result.value);
+    if ((result.value & 0x04000000) != 0) Console.WriteLine("Riscduino icache       ::  Disabled");
+    else Console.WriteLine("Riscduino icache       ::  Enabled");
+    if ((result.value & 0x08000000) != 0) Console.WriteLine("Riscduino dcache       ::  Disabled");
+    else Console.WriteLine("Riscduino dcache       ::  Enabled");
+
+}
 
 //##############################
 //# Flash Write
@@ -635,7 +734,7 @@ namespace rdnodude
             s_result result = new s_result();
             result.flag = false;
 
-            Console.WriteLine("runodude (Rev:0.6)- A Riscduino firmware downloading application");
+            Console.WriteLine("runodude (Rev:0.8)- A Riscduino firmware downloading application");
 
             if (args.Length == 3)
             {
@@ -672,10 +771,12 @@ namespace rdnodude
             user_reboot();
             result = uartm_rm_cmd(0x30020000); //  # User Chip ID
             Console.WriteLine("Riscduino Chip ID:0x{0:x8} ", result.value);
+            user_chip_id();
             user_flash_device_id();
             user_flash_chip_erase();
             user_flash_progam(HexFile,true);
             user_flash_verify(HexFile);
+            riscduino_signature();
             user_risc_wakeup();
 
 
