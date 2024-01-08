@@ -12,11 +12,11 @@
 		{
 		    "category": "Riscduino",
 		    "name": "Riscduino Boards",
-		    "version": "1.4.4",
-		    "url": "https://github.com/dineshannayya/riscduino_tools/raw/main/riscduino_firmware-1.4.0.tar.gz",
-		    "checksum": "SHA-256:752331845d289d65e8ba6f262ada085da00c94def4ae02f7628fcfaac42a2c21",
-	        "archiveFileName": "riscduino_firmware-1.4.0.tar.gz",
-		    "size": "1061693",
+		    "version": "1.4.5",
+		    "url": "https://github.com/dineshannayya/riscduino_tools/raw/main/riscduino_firmware-1.4.5.tar.gz",
+		    "checksum": "SHA-256:f2a1f69a7476f2abbc985bbddc95e6df70ae68d50fa3455e7c7ee7eeae8f3752",
+	        "archiveFileName": "riscduino_firmware-1.4.5.tar.gz",
+		    "size": "1061750",
 		    "architecture": "riscv",
 		    "boards": [
 			{"name": "Riscduino Uno"}
@@ -63,11 +63,11 @@
 		    "name": "rdnodude",
 		    "systems": [
 			{
-			    "url": "https://github.com/dineshannayya/riscduino_tools/raw/main/rdnodude-0.0.6-2023.09.07-x86_64-w64-mingw32.zip",
-			    "checksum": "SHA-256:2bf7d54a15405580ed7705fb343335625f66bcf10a266d7aef5534e8bbe9ba62",
+			    "url": "https://github.com/dineshannayya/riscduino_tools/raw/main/rdnodude-0.0.8-2024.01.08-x86_64-w64-mingw32.tar.gz",
+			    "checksum": "SHA-256:29bc64314b0018e89617d8f656f041cbf7ff30afad9bea9d13d763bb282cb250",
 			    "host": "i686-mingw32",
-			    "archiveFileName": "rdnodude-0.0.6-2023.09.07-x86_64-w64-mingw32.zip",
-			    "size": "5701"
+			    "archiveFileName": "rdnodude-0.0.8-2024.01.08-x86_64-w64-mingw32.tar.gz",
+			    "size": "5942"
 			},
 			{
 			    "url": "https://github.com/dineshannayya/riscduino_tools/raw/main/rdnodude-0.0.8-2023.12.19-x86_64-i686-pc-linux-gnu.tar.gz",
