@@ -25,7 +25,7 @@
 			{
 			    "packager": "riscduino",
 			    "version": "1.0.6",
-			    "name": "riscv64-unknown-elf-gcc"
+			    "name": "riscv64-zephyr-elf"
 			},
 			{
 			    "packager": "riscduino",
