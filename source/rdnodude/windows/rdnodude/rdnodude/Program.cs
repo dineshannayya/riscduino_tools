@@ -51,6 +51,8 @@
 ////         icache/dcache enable/disable display added                                          ////
 ////    0.8 - 19 Dec 2023, Dinesh A                                                              ////
 ////         updated boot-up sequence with riscv-control reg value                               ////
+////    0.9 - 13 Feb 2024, Dinesh A                                                              ////
+////         Hard Reset is changed based on DTR toggle                                           ////
 /////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -728,13 +730,20 @@ static void riscduino_signature()
 
             }
 
+        // Generate Hardware reset with toggle DTR from Low to High
+        static void hard_reset() {
+
+            _serialPort.DtrEnable = true;
+            System.Threading.Thread.Sleep(100);
+            _serialPort.DtrEnable = false;
+        }
 
         static void Main(string[] args)
         {
             s_result result = new s_result();
             result.flag = false;
 
-            Console.WriteLine("runodude (Rev:0.8)- A Riscduino firmware downloading application");
+            Console.WriteLine("runodude (Rev:0.9)- A Riscduino firmware downloading application");
 
             if (args.Length == 3)
             {
@@ -760,9 +769,7 @@ static void riscduino_signature()
             _serialPort.ReadTimeout = 300;
 
 
-            _serialPort.DtrEnable = true;
-            System.Threading.Thread.Sleep(100);
-            _serialPort.DtrEnable = false;
+            hard_reset();
 
             System.Threading.Thread.Sleep(2000);
             _serialPort.DiscardInBuffer();
@@ -777,7 +784,9 @@ static void riscduino_signature()
             user_flash_progam(HexFile,true);
             user_flash_verify(HexFile);
             riscduino_signature();
-            user_risc_wakeup();
+
+            hard_reset();
+            //user_risc_wakeup();
 
 
 
