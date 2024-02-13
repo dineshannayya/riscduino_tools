@@ -48,11 +48,11 @@
 			    "size": "91472406"
 			},
 			{
-			    "url": "https://github.com/dineshannayya/riscduino_tools/raw/main/toolchain_linux-x86_64_x86_64-zephyr-elf.tar.xz",
-			    "checksum": "SHA-256:a3474be6ba95d5c593e81996d3fcee5c3a283ca3c8fa148e35bb5494ddf39826",
+			    "url": "https://github.com/dineshannayya/riscduino_tools/raw/main/toolchain_linux-x86_64_riscv64-zephyr-elf.tar.xz",
+			    "checksum": "SHA-256:79b017549e42cb0ed45e4af9bee4a5d44bd2360fff3859a286ec64a78d82f539",
 			    "host": "x86_64-pc-linux-gnu",
-			    "archiveFileName": "toolchain_linux-x86_64_x86_64-zephyr-elf.tar.xz",
-			    "size": "66215136"
+			    "archiveFileName": "toolchain_linux-x86_64_riscv64-zephyr-elf.tar.xz",
+			    "size": "91199800"
 			}
 
 		    ]
