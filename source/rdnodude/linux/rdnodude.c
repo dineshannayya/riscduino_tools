@@ -46,6 +46,8 @@
 ////         icache/dcache enable/disable display added                                          ////
 ////    0.8 - 19 Dec 2023, Dinesh A                                                             ////
 ////         updated boot-up sequence with riscv-control reg value                               ////
+////    0.9 - 13 Feb 2024, Dinesh A                                                              ////
+////         Hard Reset is changed based on DTR toggle                                           ////
 /////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #include <fcntl.h>
@@ -81,7 +83,8 @@ unsigned int bank_addr = 0x00;
 // Flush Serial Port Rx Buffer
 //------------------------------------------------
 void flush_rx(int fd) {
-   ioctl(fd, TCIFLUSH); // flush receive
+   tcflush(fd, TCIOFLUSH);
+
 }
 
 //------------------------------------------------
@@ -845,6 +848,16 @@ void user_flash_verify(int fd,const char *file_path) {
 
 }
 
+// Generate Hardware reset with toggle DTR from Low to High
+ void hard_reset(int fd) {
+
+    set_DTR(fd, 1);
+    usleep(20000); // 20ms
+    set_DTR(fd, 0);
+    usleep(200000); // 200ms
+  // Flush away any bytes previously read or written.
+    flush_rx(fd);
+}
  
  
 int main(int argc, char *argv[] )
@@ -853,7 +866,7 @@ int main(int argc, char *argv[] )
 int  _serialPort;
 struct s_result result;
 
-  printf("runodude (Rev:0.8)- A Riscduino firmware downloading application");
+  printf("runodude (Rev:0.9)- A Riscduino firmware downloading application");
   if( argc != 4 ) {
       //printf("Total Argument Received : %d \n",argc);
       printf("Format: %s <COM> <BaudRate> <Hex File>  \n", argv[0]);
@@ -871,6 +884,7 @@ struct s_result result;
   _serialPort = open_serial_port(device, baud_rate);
   if (_serialPort < 0) { return 1; }
 
+  hard_reset(_serialPort);
   user_reboot(_serialPort);
   user_chip_id(_serialPort);
   user_flash_device_id(_serialPort);
@@ -879,7 +893,8 @@ struct s_result result;
   user_flash_progam(_serialPort,filename);
   user_flash_verify(_serialPort,filename);
   riscduino_signature(_serialPort);
-  user_wakeup(_serialPort);
+  hard_reset(_serialPort);
+  //user_wakeup(_serialPort);
  
   close(_serialPort);
   return 0;
