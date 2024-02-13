@@ -12,11 +12,11 @@
 		{
 		    "category": "Riscduino",
 		    "name": "Riscduino Boards",
-		    "version": "1.4.4",
-		    "url": "https://github.com/dineshannayya/riscduino_tools/raw/main/riscduino_firmware-1.4.0.tar.gz",
-		    "checksum": "SHA-256:752331845d289d65e8ba6f262ada085da00c94def4ae02f7628fcfaac42a2c21",
-	        "archiveFileName": "riscduino_firmware-1.4.0.tar.gz",
-		    "size": "1061693",
+		    "version": "1.4.6",
+		    "url": "https://github.com/dineshannayya/riscduino_tools/raw/main/riscduino_firmware-1.4.6.tar.gz",
+		    "checksum": "SHA-256:9eaf02c381b6bec255c706c9104a976d8a51c4869243a2b346a3616f9924547f",
+	        "archiveFileName": "riscduino_firmware-1.4.6.tar.gz",
+		    "size": "1061765",
 		    "architecture": "riscv",
 		    "boards": [
 			{"name": "Riscduino Uno"}
@@ -24,8 +24,8 @@
 		    "toolsDependencies": [
 			{
 			    "packager": "riscduino",
-			    "version": "1.0.4",
-			    "name": "riscv32-unknown-elf-gcc"
+			    "version": "1.0.6",
+			    "name": "riscv64-zephyr-elf"
 			},
 			{
 			    "packager": "riscduino",
@@ -37,22 +37,22 @@
 	    ],
 	    "tools": [
 		{
-		    "version": "1.0.4",
-		    "name": "riscv32-unknown-elf-gcc",
+		    "version": "1.0.6",
+		    "name": "riscv64-zephyr-elf",
 		    "systems": [
 			{
-			    "url": "https://github.com/dineshannayya/riscduino_tools/raw/main/riscv32-unknown-elf.13.2.0-x86_64-w32-mingw32.tar.gz",
-			    "checksum": "SHA-256:1b26acbb603df5a3925cd64ed103ef4969ce1edca61c2710741318273d959d82",
+			    "url": "https://github.com/dineshannayya/riscduino_tools/raw/main/toolchain_windows-x86_64_riscv64-zephyr-elf.tar.xz",
+			    "checksum": "SHA-256:888b14c35f7fa726c88192cf66b690c7f6a804e451ebfe50fc986f2c1aec6be0",
 			    "host": "i686-mingw32",
-			    "archiveFileName": "riscv32-unknown-elf.13.2.0-x86_64-w32-mingw32.tar.gz",
-			    "size": "53831946"
+			    "archiveFileName": "toolchain_windows-x86_64_riscv64-zephyr-elf.tar.xz",
+			    "size": "86172136"
 			},
 			{
-			    "url": "https://github.com/dineshannayya/riscduino_tools/raw/main/riscv32-unknown-elf.6.1.0-x86_64-i686-pc-linux-gnu.tar.gz",
-			    "checksum": "SHA-256:60c00a122db048e5e604da0b06c711757f211fcffded9cf1e2ee98200278b1cd",
+			    "url": "https://github.com/dineshannayya/riscduino_tools/raw/main/toolchain_linux-x86_64_riscv64-zephyr-elf.tar.xz",
+			    "checksum": "SHA-256:79b017549e42cb0ed45e4af9bee4a5d44bd2360fff3859a286ec64a78d82f539",
 			    "host": "x86_64-pc-linux-gnu",
-			    "archiveFileName": "riscv32-unknown-elf.6.1.0-x86_64-i686-pc-linux-gnu.tar.gz",
-			    "size": "72355749"
+			    "archiveFileName": "toolchain_linux-x86_64_riscv64-zephyr-elf.tar.xz",
+			    "size": "91199800"
 			}
 
 		    ]
@@ -63,11 +63,11 @@
 		    "name": "rdnodude",
 		    "systems": [
 			{
-			    "url": "https://github.com/dineshannayya/riscduino_tools/raw/main/rdnodude-0.0.6-2023.09.07-x86_64-w64-mingw32.zip",
-			    "checksum": "SHA-256:2bf7d54a15405580ed7705fb343335625f66bcf10a266d7aef5534e8bbe9ba62",
+			    "url": "https://github.com/dineshannayya/riscduino_tools/raw/main/rdnodude-0.0.8-2024.01.08-x86_64-w64-mingw32.tar.gz",
+			    "checksum": "SHA-256:29bc64314b0018e89617d8f656f041cbf7ff30afad9bea9d13d763bb282cb250",
 			    "host": "i686-mingw32",
-			    "archiveFileName": "rdnodude-0.0.6-2023.09.07-x86_64-w64-mingw32.zip",
-			    "size": "5701"
+			    "archiveFileName": "rdnodude-0.0.8-2024.01.08-x86_64-w64-mingw32.tar.gz",
+			    "size": "5942"
 			},
 			{
 			    "url": "https://github.com/dineshannayya/riscduino_tools/raw/main/rdnodude-0.0.8-2023.12.19-x86_64-i686-pc-linux-gnu.tar.gz",
