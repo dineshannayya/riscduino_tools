@@ -82,6 +82,7 @@ namespace rdnodude
         public const int SPI_PAGE_WRITE        = 0x00270002;
         public const int SPI_PAGE_QUAD_WRITE   = 0x00270032;
 
+        static string sVersion; // Version <v1/v2/v3>
         static SerialPort _serialPort;
         static byte[] buffer = new byte[256];
 
@@ -110,7 +111,14 @@ namespace rdnodude
                 string inString = _serialPort.ReadLine();
                 char[] spearator = { ' ', '\n' };
                 String[] strlist = inString.Split(spearator, 4, StringSplitOptions.None);
-                if (string.Equals(strlist[0], "Response:"))
+                if (string.Equals(sVersion, "v3"))
+                {
+                    //Console.WriteLine("Read  Addr: {0:x8} Data: {1:x8}", addr, strlist[1]);
+                    result.flag = true;
+                    result.value = Convert.ToUInt32(strlist[0], 16);
+                    return result;
+
+                } else if (string.Equals(strlist[0], "Response:"))
                 {
                     //Console.WriteLine("Read  Addr: {0:x8} Data: {1:x8}", addr, strlist[1]);
                     result.flag = true;
@@ -146,8 +154,11 @@ namespace rdnodude
                 {
                     //Console.WriteLine("Write Addr: {0:x8} Data:{1:x8}", addr, data);
                     result.flag = true;
-                    iChar = _serialPort.ReadByte(); // Wait for Additinal New line >>
-                    iChar = _serialPort.ReadByte(); // Wait for Additinal New line >>
+                    if (string.Equals(sVersion, "v3") == false) // If Version is not V3
+                    {
+                        iChar = _serialPort.ReadByte(); // Wait for Additinal New line >>
+                        iChar = _serialPort.ReadByte(); // Wait for Additinal New line >>
+                    }
                     return result;
                 }
                 else
@@ -736,31 +747,47 @@ static void riscduino_signature()
             _serialPort.DtrEnable = true;
             System.Threading.Thread.Sleep(100);
             _serialPort.DtrEnable = false;
+
+
         }
+
+        // In V3- Since Chip is Auto Baud mode, We need to send '\n' 
+        // to device to detect the baud rate
+        static void auto_bauddetect()
+        {
+
+            if (string.Equals(sVersion, "v3"))
+            {
+                _serialPort.Write("\n");
+            }
+        }
+
 
         static void Main(string[] args)
         {
             s_result result = new s_result();
             result.flag = false;
 
-            Console.WriteLine("runodude (Rev:0.9)- A Riscduino firmware downloading application");
+            Console.WriteLine("runodude (Rev:1.0)- A Riscduino firmware downloading application");
 
-            if (args.Length == 3)
+            if (args.Length == 4)
             {
 
-                Console.WriteLine("COM PORT  = {0}", args[0]);
-                Console.WriteLine("Baud Rate = {0}", args[1]);
-                Console.WriteLine("Hex File  = {0}", args[2]);
+                Console.WriteLine("Version   = {0}", args[0]);
+                Console.WriteLine("COM PORT  = {0}", args[1]);
+                Console.WriteLine("Baud Rate = {0}", args[2]);
+                Console.WriteLine("Hex File  = {0}", args[3]);
             }
             else
             {
-                Console.WriteLine("Fomat: rdnodude <COM> <BaudRate> <Hex File>");
+                Console.WriteLine("Fomat: rdnodude <Version: v1/v2/v3> <COM> <BaudRate> <Hex File>");
                 Environment.Exit(0);
             }
 
-            String ComPort = args[0];
-            int iBaudRate = Convert.ToInt32(args[1]);
-            String HexFile = args[2];
+            sVersion = args[0];
+            String ComPort = args[1];
+            int iBaudRate = Convert.ToInt32(args[2]);
+            String HexFile = args[3];
 
             // Create a new SerialPort object with default settings.
             _serialPort = new SerialPort(ComPort, iBaudRate);
@@ -770,8 +797,9 @@ static void riscduino_signature()
 
 
             hard_reset();
-
             System.Threading.Thread.Sleep(2000);
+
+            auto_bauddetect(); 
             _serialPort.DiscardInBuffer();
             _serialPort.DiscardOutBuffer();
 
