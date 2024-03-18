@@ -16,39 +16,56 @@
 //// SPDX-FileContributor: Created by Dinesh Annayya <dinesh.annayya@gmail.com>                  ////
 ////                                                                                             ////
 /////////////////////////////////////////////////////////////////////////////////////////////////////
-////                                                                                             ////
-////  rdnodude is firmware download application for Riscduino Series Chip                        ////
-////                                                                                             ////
-////  The riscduino Silicon project Details available at                                         ////
-////  https://github.com/dineshannayya/riscduino.git                                             ////
-////                                                                                             ////
-////  Author(s):                                                                                 ////
-////      - Dinesh Annayya, dinesh.annayya@gmail.com                                             ////
-////                                                                                             ////
-////  Revision :                                                                                 ////
-////    0.1 - 17-July 2023, Dinesh A                                                             ////
-////          Initial integration with firmware                                                  ////
-////    0.2 - 26 July 2023, Dinesh A                                                             ////
-////          As current Flash write phase is around 4 Minute, To reduce the time, we are        ////
-////          skipping write back response function and added just delay function                ////
-////    0.4 - 27 Aug 2023, Dinesh A                                                              ////
-////          Read compare Error count indication added                                          ////
-////    0.5 - 4 Sept 2023, Dinesh A                                                              ////
-////          Memory Write/Read to to SRAM Location (0x08xx_xxxx) support added                  ////
-////    0.6 - 6 Sept 2023, Dinesh A                                                              ////
-////          Auto Wakeup feature enabled                                                        ////
-////    0.7 - 19 Dec 2023, Dinesh A                                                              ////
-////     A. Enabled additional chip-id check to handle CI2306Q                                   ////
-////    0.71 - 19 Dec 2023, Dinesh A                                                             ////
-////     A.  changed the uart and caravel flash handshake bit at address 0x30080000 is changed   ////
-////           from bit[31] to [15] - Note: in 2306 chip bit[31] is tied to zero                 ////
-////    0.72 - 19 Dec 2023, Dinesh A                                                             ////
-////         icache/dcache enable/disable display added                                          ////
-////    0.8 - 19 Dec 2023, Dinesh A                                                             ////
-////         updated boot-up sequence with riscv-control reg value                               ////
-////    0.9 - 13 Feb 2024, Dinesh A                                                              ////
-////         Hard Reset is changed based on DTR toggle                                           ////
-/////////////////////////////////////////////////////////////////////////////////////////////////////
+/****************************************************************************************************
+                                                                                                 
+      rdnodude is firmware download application for Riscduino Series Chip                        
+                                                                                                 
+      The riscduino Silicon project Details available at                                         
+      https://github.com/dineshannayya/riscduino.git                                             
+                                                                                                 
+      Author(s):                                                                                 
+          - Dinesh Annayya, dinesh.annayya@gmail.com                                             
+
+      Uart Command
+         v1 :  wm 30020000 12345678
+               cmd success>>
+
+               rm 30020000
+               Response: 12345678
+                                                                                                 
+         v3 :  wm 30020000 12345678
+               cmd success
+
+               rm 30020000
+               12345678
+
+      Revision :                                                                                 
+        0.1 - 17-July 2023, Dinesh A                                                             
+              Initial integration with firmware                                                  
+        0.2 - 26 July 2023, Dinesh A                                                             
+              As current Flash write phase is around 4 Minute, To reduce the time, we are        
+              skipping write back response function and added just delay function                
+        0.4 - 27 Aug 2023, Dinesh A                                                              
+              Read compare Error count indication added                                          
+        0.5 - 4 Sept 2023, Dinesh A                                                              
+              Memory Write/Read to to SRAM Location (0x08xx_xxxx) support added                  
+        0.6 - 6 Sept 2023, Dinesh A                                                              
+              Auto Wakeup feature enabled                                                        
+        0.7 - 19 Dec 2023, Dinesh A                                                              
+         A. Enabled additional chip-id check to handle CI2306Q                                   
+        0.71 - 19 Dec 2023, Dinesh A                                                             
+         A.  changed the uart and caravel flash handshake bit at address 0x30080000 is changed   
+               from bit[31] to [15] - Note: in 2306 chip bit[31] is tied to zero                 
+        0.72 - 19 Dec 2023, Dinesh A                                                             
+             icache/dcache enable/disable display added                                          
+        0.8 - 19 Dec 2023, Dinesh A                                                              
+             updated boot-up sequence with riscv-control reg value                               
+        0.9 - 13 Feb 2024, Dinesh A                                                              
+             Hard Reset is changed based on DTR toggle                                           
+        1.0 - 18 Mar 2024, Dinesh A                                                              
+             Revision added a option <v1/v2/v3>, v3 is needed for auto baud func                 
+
+*************************************************************************************************/
 
 #include <fcntl.h>
 #include <stdio.h>
@@ -66,6 +83,7 @@ struct s_result
 };
 
 unsigned char buffer[256];
+unsigned char version[256];
 
 unsigned char wr_resp[14] = {'c','m','d',' ','s','u','c','c','e','s','s','\n','>','>'};
 
@@ -190,10 +208,20 @@ struct  s_result  ExtractReadResponse(char *buffer,int iSize) {
  struct s_result uartm_read_response(int fd, uint addr)
  {
      struct s_result result;
+     char substring[8];
      result.flag = 0;
 
-     int iSize = read_port(fd,buffer, 19);
-     result = ExtractReadResponse(buffer,iSize);
+    // v3 response passes directly data instead of <Response: [ReadData]>
+    if(strncmp(version,"v3",2) == 0) {
+     int iSize = read_port(fd,buffer, 9);
+     strncpy(substring,buffer,8);
+     sscanf(substring,"%x",&result.value);
+     result.flag = 1;
+
+    } else {
+        int iSize = read_port(fd,buffer, 19);
+        result = ExtractReadResponse(buffer,iSize);
+    }
 
      return result;
  }
@@ -236,7 +264,11 @@ struct s_result uartm_write_response(int fd,unsigned int  addr, unsigned int  da
             result.flag = 0;
             int iChar;
 
-            read_port(fd,buffer, 14);
+            if(strncmp(version,"v3",2) == 0) {
+                read_port(fd,buffer, 12);
+            } else {
+                read_port(fd,buffer, 14);
+            }
             if(strncmp(buffer,"cmd success",11) != 0) {
                  printf("Invalid Response:%s Received\n",buffer);
                  result.flag = 0;
@@ -858,6 +890,19 @@ void user_flash_verify(int fd,const char *file_path) {
   // Flush away any bytes previously read or written.
     flush_rx(fd);
 }
+
+// In V3- Since Chip is Auto Baud mode, We need to send '\n' 
+// to device to detect the baud rate
+void auto_bauddetect(int fd) {
+    if(strncmp(version,"v3",2) == 0) {
+        sprintf(buffer,"\n");
+        write_port(fd, buffer, 1);
+        usleep(200000); // 200ms
+        // Flush away any bytes previously read or written.
+        flush_rx(fd);
+    }
+}
+
  
  
 int main(int argc, char *argv[] )
@@ -866,17 +911,19 @@ int main(int argc, char *argv[] )
 int  _serialPort;
 struct s_result result;
 
-  printf("runodude (Rev:0.9)- A Riscduino firmware downloading application");
-  if( argc != 4 ) {
+  printf("runodude (Rev:1.0)- A Riscduino firmware downloading application");
+  if( argc != 5 ) {
       //printf("Total Argument Received : %d \n",argc);
-      printf("Format: %s <COM> <BaudRate> <Hex File>  \n", argv[0]);
+      printf("Format: %s <Version: v1/v2/v3> <COM> <BaudRate> <Hex File>  \n", argv[0]);
       exit(0);
    } 
   //const char * device = "/dev/ttyACM0";
-  const char *device = argv[1];
-  uint32_t   baud_rate = atoi(argv[2]);
-  const char *filename = argv[3];
+  sprintf(version,"%s",argv[1]);
+  const char *device = argv[2];
+  uint32_t   baud_rate = atoi(argv[3]);
+  const char *filename = argv[4];
 
+  printf("version   = %s\n", version);
   printf("COM PORT  = %s\n", device);
   printf("Baud Rate = %d\n", baud_rate);
   printf("Hex File  = %s\n", filename);
@@ -885,6 +932,9 @@ struct s_result result;
   if (_serialPort < 0) { return 1; }
 
   hard_reset(_serialPort);
+
+  auto_bauddetect(_serialPort);
+
   user_reboot(_serialPort);
   user_chip_id(_serialPort);
   user_flash_device_id(_serialPort);

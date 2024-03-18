@@ -17,46 +17,59 @@
 //// SPDX-FileContributor: Created by Dinesh Annayya <dinesh.annayya@gmail.com>                  ////
 ////                                                                                             ////
 /////////////////////////////////////////////////////////////////////////////////////////////////////
-////                                                                                             ////
-////  rdnodude is firmware download application for Riscduino Series Chip                        ////
-////                                                                                             ////
-////  The riscduino Silicon project Details available at                                         ////
-////  https://github.com/dineshannayya/riscduino.git                                             ////
-////                                                                                             ////
-////  Author(s):                                                                                 ////
-////      - Dinesh Annayya, dinesh.annayya@gmail.com                                             ////
-////                                                                                             ////
-////  Revision :                                                                                 ////
-////    0.1 - 17-July 2023, Dinesh A                                                             ////
-////          Initial integration with firmware                                                  ////
-////    0.2 - 29-July 2023, Dinesh A                                                             ////
-////          A. DTR Toggle support added to reset the Riscduino chip                            ////
-////          B. As Flash Page Write is completes less than MiliSecond,                          ////
-////             We are bypassing read back status check to reduce the flash download time.      ////
-////    0.3 - 17-Aug 2023, Dinesh A                                                              ////
-////         A. Quad SPI Read func added                                                         ////
-////    0.4 - 27 Aug 2023, Dinesh A                                                              ////
-////          Read compare Error count indication added                                          ////
-////    0.5 - 4 Sept 2023, Dinesh A                                                              ////
-////          A. Bank Switch Supported for Address Crossing 0xFFFF                               ////
-////          B. Flash Sector Erase function changed Chip Erase                                  ////
-////    0.6 - 6 Sept 2023, Dinesh A                                                              ////
-////          Auto Wakeup feature enabled                                                        ////
-////    0.7 - 19 Dec 2023, Dinesh A                                                              ////
-////     A. Enabled additional chip-id check to handle CI2306Q                                   ////
-////    0.71 - 19 Dec 2023, Dinesh A                                                             ////
-////     A.  changed the uart and caravel flash handshake bit at address 0x30080000 is changed   ////
-////           from bit[31] to [15] - Note: in 2306 chip bit[31] is tied to zero                 ////
-////    0.72 - 19 Dec 2023, Dinesh A                                                             ////
-////         icache/dcache enable/disable display added                                          ////
-////    0.8 - 19 Dec 2023, Dinesh A                                                              ////
-////         updated boot-up sequence with riscv-control reg value                               ////
-////    0.9 - 13 Feb 2024, Dinesh A                                                              ////
-////         Hard Reset is changed based on DTR toggle                                           ////
-////    1.0 - 18th Mar 2024, Dinesh A                                                            ////
-////          Revision added a option <v1/v2/v3>, v3 is needed for auto baud func                ////
-/////////////////////////////////////////////////////////////////////////////////////////////////////
+                                                                                                 
+      rdnodude is firmware download application for Riscduino Series Chip                        
+                                                                                                 
+      The riscduino Silicon project Details available at                                         
+      https://github.com/dineshannayya/riscduino.git                                             
+                                                                                                 
+      Author(s):                                                                                 
+          - Dinesh Annayya, dinesh.annayya@gmail.com       
 
+      Uart Command
+         v1 :  wm 30020000 12345678
+               cmd success>>
+
+               rm 30020000
+               Response: 12345678
+                                                                                                 
+         v3 :  wm 30020000 12345678
+               cmd success
+
+               rm 30020000
+               12345678
+                                      
+                                                                                                 
+      Revision :                                                                                 
+        0.1 - 17-July 2023, Dinesh A                                                             
+              Initial integration with firmware                                                  
+        0.2 - 29-July 2023, Dinesh A                                                             
+              A. DTR Toggle support added to reset the Riscduino chip                            
+              B. As Flash Page Write is completes less than MiliSecond,                          
+                 We are bypassing read back status check to reduce the flash download time.      
+        0.3 - 17-Aug 2023, Dinesh A                                                              
+             A. Quad SPI Read func added                                                         
+        0.4 - 27 Aug 2023, Dinesh A                                                              
+              Read compare Error count indication added                                          
+        0.5 - 4 Sept 2023, Dinesh A                                                              
+              A. Bank Switch Supported for Address Crossing 0xFFFF                               
+              B. Flash Sector Erase function changed Chip Erase                                  
+        0.6 - 6 Sept 2023, Dinesh A                                                              
+              Auto Wakeup feature enabled                                                        
+        0.7 - 19 Dec 2023, Dinesh A                                                              
+         A. Enabled additional chip-id check to handle CI2306Q                                   
+        0.71 - 19 Dec 2023, Dinesh A                                                             
+         A.  changed the uart and caravel flash handshake bit at address 0x30080000 is changed   
+               from bit[31] to [15] - Note: in 2306 chip bit[31] is tied to zero                 
+        0.72 - 19 Dec 2023, Dinesh A                                                             
+             icache/dcache enable/disable display added                                          
+        0.8 - 19 Dec 2023, Dinesh A                                                              
+             updated boot-up sequence with riscv-control reg value                               
+        0.9 - 13 Feb 2024, Dinesh A                                                              
+             Hard Reset is changed based on DTR toggle                                           
+        1.0 - 18th Mar 2024, Dinesh A                                                            
+              Revision added a option <v1/v2/v3>, v3 is needed for auto baud func                
+************************************************************************************************/
 
 using System;
 using System.Collections.Generic;
