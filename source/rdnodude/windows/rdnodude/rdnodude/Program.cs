@@ -53,6 +53,8 @@
 ////         updated boot-up sequence with riscv-control reg value                               ////
 ////    0.9 - 13 Feb 2024, Dinesh A                                                              ////
 ////         Hard Reset is changed based on DTR toggle                                           ////
+////    1.0 - 18th Mar 2024, Dinesh A                                                            ////
+////          Revision added a option <v1/v2/v3>, v3 is needed for auto baud func                ////
 /////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
