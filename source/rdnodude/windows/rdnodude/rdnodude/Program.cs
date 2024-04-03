@@ -17,7 +17,7 @@
 //// SPDX-FileContributor: Created by Dinesh Annayya <dinesh.annayya@gmail.com>                  ////
 ////                                                                                             ////
 /////////////////////////////////////////////////////////////////////////////////////////////////////
-                                                                                                 
+/***************************************************************************************************                                                                                                 
       rdnodude is firmware download application for Riscduino Series Chip                        
                                                                                                  
       The riscduino Silicon project Details available at                                         
@@ -69,6 +69,9 @@
              Hard Reset is changed based on DTR toggle                                           
         1.0 - 18th Mar 2024, Dinesh A                                                            
               Revision added a option <v1/v2/v3>, v3 is needed for auto baud func                
+        1.1 - 3rd April 2024, Dinesh A                                                           
+              Reduced the Delay after reset from 2Second to 500ms                                
+
 ************************************************************************************************/
 
 using System;
@@ -783,7 +786,7 @@ static void riscduino_signature()
             s_result result = new s_result();
             result.flag = false;
 
-            Console.WriteLine("runodude (Rev:1.0)- A Riscduino firmware downloading application");
+            Console.WriteLine("runodude (Rev:1.1)- A Riscduino firmware downloading application");
 
             if (args.Length == 4)
             {
@@ -812,7 +815,7 @@ static void riscduino_signature()
 
 
             hard_reset();
-            System.Threading.Thread.Sleep(2000);
+            System.Threading.Thread.Sleep(500);
 
             auto_bauddetect(); 
             _serialPort.DiscardInBuffer();
