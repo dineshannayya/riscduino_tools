@@ -64,6 +64,8 @@
              Hard Reset is changed based on DTR toggle                                           
         1.0 - 18 Mar 2024, Dinesh A                                                              
              Revision added a option <v1/v2/v3>, v3 is needed for auto baud func                 
+        1.1 - 02 April 2024, Dinesh A                                                              
+              Bug fix in Flash write command
 
 *************************************************************************************************/
 
@@ -722,7 +724,7 @@ void user_flash_progam(int fd,const char *file_path) {
                strncpy(substring,Instring+(i*3),2);
                substring[2] =0x00;
                sscanf(substring,"%x",&tData);
-               int tShift = (8 * i);
+               int tShift = (8 * ncnt);
                dataout |= tData << tShift; 
                //printf("SubString:%d:%d:%d:%s:%x:%x\n",nbytes,i,ncnt,substring,tData,dataout);
                ncnt = ncnt + 1;
@@ -839,7 +841,7 @@ void user_flash_verify(int fd,const char *file_path) {
                substring[2] =0x00;
                //printf("SubString:%d:%d:%d: %s\n",nbytes,i,ncnt,substring);
                sscanf(substring,"%x",&tData);
-               int tShift = (8 * i);
+               int tShift = (8 * ncnt);
                dataout |= tData << tShift; 
                ncnt = ncnt + 1;
                total_bytes ++;
@@ -884,11 +886,9 @@ void user_flash_verify(int fd,const char *file_path) {
  void hard_reset(int fd) {
 
     set_DTR(fd, 1);
-    usleep(20000); // 20ms
+    usleep(10000); // 1ms
     set_DTR(fd, 0);
-    usleep(200000); // 200ms
-  // Flush away any bytes previously read or written.
-    flush_rx(fd);
+    usleep(500000); // 500ms
 }
 
 // In V3- Since Chip is Auto Baud mode, We need to send '\n' 
@@ -897,7 +897,7 @@ void auto_bauddetect(int fd) {
     if(strncmp(version,"v3",2) == 0) {
         sprintf(buffer,"\n");
         write_port(fd, buffer, 1);
-        usleep(200000); // 200ms
+        usleep(10000); // 10ms
         // Flush away any bytes previously read or written.
         flush_rx(fd);
     }
@@ -911,7 +911,7 @@ int main(int argc, char *argv[] )
 int  _serialPort;
 struct s_result result;
 
-  printf("runodude (Rev:1.0)- A Riscduino firmware downloading application");
+  printf("runodude (Rev:1.1)- A Riscduino firmware downloading application");
   if( argc != 5 ) {
       //printf("Total Argument Received : %d \n",argc);
       printf("Format: %s <Version: v1/v2/v3> <COM> <BaudRate> <Hex File>  \n", argv[0]);
